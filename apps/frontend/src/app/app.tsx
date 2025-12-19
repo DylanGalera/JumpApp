@@ -1,8 +1,13 @@
 import NxWelcome from './nx-welcome';
-
+import { User } from '@financial-ai/types';
 import { Route, Routes, Link } from 'react-router-dom';
 
 export function App() {
+  const b: User = {
+    email: '',
+    id: '',
+    role: 'admin'
+  }
   return (
     <div>
       <NxWelcome title="frontend" />
