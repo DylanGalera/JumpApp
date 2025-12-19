@@ -2,12 +2,45 @@
   "name": "@financial-ai/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "app": "npx nx serve frontend",
+    "start": "npx nx serve backend"
+  },
   "private": true,
-  "dependencies": {},
   "devDependencies": {
+    "@nx/esbuild": "22.3.1",
     "@nx/js": "22.3.1",
+    "@nx/node": "^22.3.1",
+    "@nx/react": "^22.3.1",
+    "@nx/vite": "22.3.1",
+    "@nx/web": "22.3.1",
     "@nx/workspace": "22.3.1",
-    "nx": "22.3.1"
+    "@swc-node/register": "~1.9.1",
+    "@swc/core": "~1.5.7",
+    "@swc/helpers": "~0.5.11",
+    "@types/express": "^4.17.21",
+    "@types/node": "20.19.9",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "@vitest/ui": "^3.0.0",
+    "autoprefixer": "10.4.13",
+    "esbuild": "^0.19.2",
+    "jiti": "2.4.2",
+    "jsdom": "~22.1.0",
+    "nx": "22.3.1",
+    "postcss": "8.4.38",
+    "prettier": "~3.6.2",
+    "tailwindcss": "3.4.3",
+    "tslib": "^2.3.0",
+    "typescript": "~5.9.2",
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "6.29.0"
   }
 }
