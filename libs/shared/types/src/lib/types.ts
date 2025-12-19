@@ -1,5 +1,10 @@
-export interface User {
-  id: string;
-  email: string;
-  role: 'admin' | 'user';
+import { TUser } from "../models";
+
+export interface PVerifyCodeParams {
+  code: string
+}
+
+export interface RVerifyCodeResult {
+  success: boolean
+  user: TUser
 }

@@ -10,12 +10,6 @@ export default defineConfig(() => ({
   cacheDir: '../../../node_modules/.vite/libs/shared/types',
   plugins: [
     nxViteTsPaths(),
-    nxCopyAssetsPlugin(['*.md']),
-    dts({
-      entryRoot: 'src',
-      tsconfigPath: path.join(import.meta.dirname, 'tsconfig.lib.json'),
-      pathsToAliases: false,
-    }),
   ],
   // Uncomment this if you are using workers.
   // worker: {
@@ -24,12 +18,7 @@ export default defineConfig(() => ({
   // Configuration for building your library.
   // See: https://vite.dev/guide/build.html#library-mode
   build: {
-    outDir: '../../../dist/libs/shared/types',
-    emptyOutDir: true,
-    reportCompressedSize: true,
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
+    ssr:true,
     lib: {
       // Could also be a dictionary or array of multiple entry points.
       entry: 'src/index.ts',
@@ -41,7 +30,7 @@ export default defineConfig(() => ({
     },
     rollupOptions: {
       // External packages that should not be bundled into your library.
-      external: [],
+      external: ['node:util', 'node:stream', 'node:buffer', 'node:path', 'mongoose'],
     },
   },
 }));
