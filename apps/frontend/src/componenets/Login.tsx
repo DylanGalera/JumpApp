@@ -2,23 +2,26 @@ import { CredentialResponse, GoogleLogin, useGoogleLogin } from '@react-oauth/go
 import { jwtDecode } from 'jwt-decode';
 import { post } from '../services';
 import { PVerifyCodeParams, ROUTES_NAMES, RVerifyCodeResult } from '@financial-ai/types'
+import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
 export const Login = () => {
 
-    const login = useGoogleLogin({
+    const { login } = useAuth()
+    const loginUser = useGoogleLogin({
         onSuccess: async (codeResponse) => {
-            // 1. This is now the actual 'code' (e.g., "4/0A...")
-            const { code } = codeResponse;
-            console.log("Auth Code received:", code);
-
             try {
-                // 2. Send the code to your backend
                 const response = await post<PVerifyCodeParams, RVerifyCodeResult>(
-                    ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.verify,
-                    { code }
+                    ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.login,
+                    codeResponse
                 );
-                console.log("Backend verified successfully:", response);
+                if (response.success) {
+                    toast.success('Welcome ' + response.name)
+                    login(response.user)
+                } else {
+                    toast.error('Login Failed')
+                }
             } catch (err) {
-                console.error("Verification failed:", err);
+                toast.error("Verification failed:" + err)
             }
         },
         onError: (error) => console.log('Login Failed:', error),
@@ -29,7 +32,7 @@ export const Login = () => {
         <div className="flex flex-col items-center gap-4 p-10">
             <h1 className="text-xl font-bold">Welcome Advisor</h1>
             <button
-                onClick={() => login()}
+                onClick={() => loginUser()}
                 className="flex items-center gap-3 px-6 py-3 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-colors bg-white text-gray-700 font-medium"
             >
                 <img

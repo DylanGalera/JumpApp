@@ -4,6 +4,7 @@ import auth from './routes/auth'
 import cors from 'cors'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -20,11 +21,15 @@ const connectDB = async () => {
 connectDB();
 
 const app = express();
-app.use(
-  cors({
-    exposedHeaders: ['Content-Disposition'],
-  }),
-)
+
+app.use(cookieParser());
+
+app.use(cors({
+  origin: process.env.FRONT_URL, // Your exact frontend URL
+  credentials: true,                // Required to allow the browser to receive/send cookies
+  //exposedHeaders: ['Content-Disposition'],
+}));
+
 app.use(express.json({ limit: '600kb' }))
 
 app.get('/', (req, res) => {

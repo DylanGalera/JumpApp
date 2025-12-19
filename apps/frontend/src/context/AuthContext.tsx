@@ -1,4 +1,6 @@
+import { ROUTES_NAMES, RVerifyCodeResult, TUser } from '@financial-ai/types';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { post } from '../services';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -11,15 +13,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<TUser | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start as loading
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Simulate checking for a session cookie or local token
-        // const response = await api.get('/auth/me'); 
-        // setUser(response.data);
+        const result = await post<any, RVerifyCodeResult>(ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.check, {})
+        if (result.success) {
+          login(result.user)
+        }
       } catch (err) {
         setUser(null);
       } finally {
@@ -29,16 +32,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, []);
 
-  const login = (userData: any) => setUser(userData);
-  const logout = () => setUser(null);
+  const login = (userData: TUser) => setUser(userData);
+  const logout = () => {
+    post<any, RVerifyCodeResult>(ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.logout, {})
+    setUser(null)
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated: !!user, 
-      isLoading, 
-      user, 
-      login, 
-      logout 
+    <AuthContext.Provider value={{
+      isAuthenticated: !!user,
+      isLoading,
+      user,
+      login,
+      logout,
     }}>
       {children}
     </AuthContext.Provider>

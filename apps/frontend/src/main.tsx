@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { ChatBot } from './pages/ChatBot';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './componenets/ProtectedRoute';
+import { ToastContainer } from 'react-toastify'
 
 const GOOGLE_CLIENT_ID = "979532853398-33bmqdruapg9d8mlmhcn93ksds2n4bjm.apps.googleusercontent.com";
 
@@ -15,6 +16,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <StrictMode>
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <ToastContainer />
       <AuthProvider>
         <BrowserRouter>
           <Routes>

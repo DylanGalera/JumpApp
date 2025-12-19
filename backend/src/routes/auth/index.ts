@@ -1,9 +1,13 @@
 import express from 'express'
 import { ROUTES_NAMES, PVerifyCodeParams } from '@financial-ai/types'
-import { authUser } from './auth'
+import { authLogin } from './login'
+import { authCheck } from './check'
+import { authLogout } from './logout'
 
 const router = express.Router()
 
-router.post(ROUTES_NAMES.AUTH.apis.verify, authUser)
+router.post(ROUTES_NAMES.AUTH.apis.login, authLogin)
+router.post(ROUTES_NAMES.AUTH.apis.check, authCheck)
+router.post(ROUTES_NAMES.AUTH.apis.logout, authLogout)
 
 export default router

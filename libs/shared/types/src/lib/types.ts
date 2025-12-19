@@ -7,4 +7,5 @@ export interface PVerifyCodeParams {
 export interface RVerifyCodeResult {
   success: boolean
   user: TUser
+  name: string
 }

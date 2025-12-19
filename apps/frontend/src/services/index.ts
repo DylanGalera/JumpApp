@@ -17,6 +17,7 @@ export const post = async <P, T>(
         jwt: jwt,
       },
       signal: AbortSignal.timeout(timeout || 20000),
+      credentials: 'include'
     })
   } catch (er) {
     throw new Error('Error')

@@ -1,16 +1,17 @@
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Login } from './Login';
+import { Spinner } from './Spinner';
 
 
 export const ProtectedRoute = () => {
-    const { isAuthenticated, isLoading } = useAuth();
+    const { isAuthenticated, isLoading, logout } = useAuth();
 
     // 1. Show loading state first
     if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center">
-                <p className="text-lg font-medium">Loading...</p>
+                <Spinner />
             </div>
         );
     }
@@ -21,5 +22,7 @@ export const ProtectedRoute = () => {
     }
 
     // 3. If authenticated, show the private content
-    return <Outlet />;
+    return <div className='flex flex-col'>
+        <div className='bg-red-50'><button onClick={logout}>Log out</button></div>
+        <Outlet /></div>;
 };
