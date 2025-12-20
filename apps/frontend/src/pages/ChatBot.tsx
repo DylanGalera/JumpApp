@@ -36,7 +36,9 @@ export function ChatBot() {
             setIsLoading(false);
             setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
         });
-
+        socket.on('exit', (msg: string) => {
+            logout()
+        });
         return () => {
             socket.off('connect');
             socket.off('disconnect');

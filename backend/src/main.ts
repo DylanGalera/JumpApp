@@ -9,6 +9,8 @@ import cookieParser from 'cookie-parser';
 import { User } from './models/users';
 import { Server } from 'socket.io'
 import http from 'http';
+import * as cookie from 'cookie';
+import jwt from 'jsonwebtoken'
 
 export interface CustomRequest extends Request {
   io: Server;
@@ -75,10 +77,20 @@ app.use(ROUTES_NAMES.AI.name, ai)
 
 io.on('connection', (socket) => {
 
-  console.log('User connected via socket');
+  const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+  const token = cookies.session_token
+
+  if (!token) {
+    console.log("invalid token kick out user!")
+    return socket.emit('exit')
+  }
+
+  const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
+  const userId = decoded.userId
+  console.log('User connected via socket', userId);
 
   socket.on('disconnect', (reason) => {
-    console.log(`User ${socket.id} disconnected. Reason: ${reason}`);
+    console.log(`User ${userId} socket id:${socket.id} disconnected. Reason: ${reason}`);
   });
 
   socket.on('send', (msg) => {
