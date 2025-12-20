@@ -1,15 +1,23 @@
+import { TTask } from '@financial-ai/types';
 import { Schema, model } from 'mongoose';
 
-const TaskSchema = new Schema({
-  userId: String,
-  status: { type: String, enum: ['PENDING', 'WAITING_FOR_REPLY', 'COMPLETED'] },
-  type: String, // e.g., 'scheduling'
-  metadata: {
-    clientEmail: String,
-    threadId: String,       // Gmail Thread ID to watch
-    proposedTimes: [Date]
+const TaskSchema = new Schema<TTask>({
+  userId: { type: String, ref: 'User', required: true, index: true },
+  title: { type: String, required: true },
+  details: { type: String },
+  dueDate: { type: Date },
+  status: {
+    type: String,
+    enum: ['pending', 'in-progress', 'completed', 'cancelled'],
+    default: 'pending'
   },
-  lastUpdated: { type: Date, default: Date.now }
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
+  source: { type: String, default: 'manual' },
+  createdAt: { type: Date, default: Date.now }
 });
 
-export const Task = model('Task', TaskSchema);
+export const Task = model<TTask>('Tasks', TaskSchema);

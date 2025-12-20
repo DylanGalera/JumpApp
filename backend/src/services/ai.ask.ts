@@ -29,7 +29,7 @@ export async function askAiAgent(userId: string, question: string): Promise<stri
         ]);
 
         const contextText = contextDocs.map(doc => doc.content).join("\n\n");
-        const response = await callAiAPI(contextText, question)
+        const response = await callAiAPI(contextText, question, userId)
         return response
     } catch (e) {
         console.log("Error while asking AI:", e)
