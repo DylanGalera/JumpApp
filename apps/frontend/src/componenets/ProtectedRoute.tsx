@@ -5,8 +5,22 @@ import { Spinner } from './Spinner';
 
 
 export const ProtectedRoute = () => {
-    const { isAuthenticated, isLoading, logout } = useAuth();
+    const { isAuthenticated, isLoading, logout, isHubspotConnected } = useAuth();
 
+    const connectHubSpot = () => {
+        const clientId = import.meta.env.VITE_REACT_APP_HUBSPOT_CLIENT_ID;
+        // 1. This must be the ONE URL whitelisted n HubSpot Dev Portal
+        const redirectUri = "http://localhost:4200/hubSpotAuth";
+
+        // 3. Put that current URL into the 'state' parameter
+        const scopes = "crm.objects.contacts.read crm.objects.deals.read crm.objects.orders.read";
+        const authUrl = `https://app.hubspot.com/oauth/authorize?` +
+            `client_id=${clientId}&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `scope=${encodeURIComponent(scopes)}`
+
+        window.location.href = authUrl;
+    }
     // 1. Show loading state first
     if (isLoading) {
         return (
@@ -23,6 +37,9 @@ export const ProtectedRoute = () => {
 
     // 3. If authenticated, show the private content
     return <div className='flex flex-col'>
-        <div className='bg-red-50'><button onClick={logout}>Log out</button></div>
+        <div className='bg-red-50 flex gap-3 justify-between'>
+            <button className='border border-1 border-black p-1' onClick={logout}>Log out</button>
+            {!isHubspotConnected && <button className='border border-1 border-black p-1' onClick={connectHubSpot}>Connect Hubspot</button>}
+        </div>
         <Outlet /></div>;
 };

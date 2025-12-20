@@ -8,6 +8,8 @@ interface AuthContextType {
   user: any | null;
   login: (userData: any) => void;
   logout: () => void;
+  isHubspotConnected?: boolean
+  setHubSpot: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +18,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<TUser | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start as loading
 
+  const setHubSpot = () => {
+    setUser(u => {
+      if (!u) return u
+      return { ...u, hubspotTokens: { lastSyncedAt: 1, access_token: '', refresh_token: '', expiresAt: 0 } }
+    })
+  }
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -45,6 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       login,
       logout,
+      isHubspotConnected: !!user?.hubspotTokens,
+      setHubSpot
     }}>
       {children}
     </AuthContext.Provider>

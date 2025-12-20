@@ -1,9 +1,10 @@
 import { PVerifyCodeParams, RVerifyCodeResult } from "@financial-ai/types";
 import { User } from "../../models/users";
-import { CookieOptions, Request, Response } from 'express';
+import { CookieOptions, Request, Response, urlencoded } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken'
 import { syncUserGmail } from "../../services/gmail.service";
+import { syncHubspotData } from "backend/src/services/hubspot.sync";
 
 export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     httpOnly: true,     // Prevents JS access (XSS protection)
@@ -47,10 +48,16 @@ export async function authLogin(req: Request, res: Response) {
             console.error("Initial sync failed:", err)
         );
 
+        syncHubspotData(user._id.toString())
+
         const sessionToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
         res.cookie('session_token', sessionToken, LOGIN_COOCKIE_PARAMS);
 
         delete user.accessToken
+        delete user.refreshToken
+        delete user.hubspotTokens?.access_token
+        delete user.hubspotTokens?.refresh_token
+
         res.status(200).json({ success: true, user, name: payload.name || 'User' } as RVerifyCodeResult);
     } catch (error) {
         console.log(">>>", error)

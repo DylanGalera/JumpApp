@@ -7,14 +7,16 @@ type EmailData = {
     id: string,
     subject: string,
     from: string
+    type: 'contact' | 'note_chunk' | 'email_chunk' | 'email_address'
 }
 
-export async function vectorizeAndStore(userId: string, emailData: EmailData, chunks: string[]) {
+export async function vectorizeAndStore(userId: string, emailData: EmailData, chunks: string[], source: 'gmail' | 'hubspot') {
     for (const chunk of chunks) {
         // 1. Generate Embedding
         const embedding = await hf.featureExtraction({
             model: "sentence-transformers/all-MiniLM-L6-v2",
             inputs: chunk,
+            provider: "hf-inference"
         }) as number[];
 
         await KNowledge.create({
@@ -22,11 +24,11 @@ export async function vectorizeAndStore(userId: string, emailData: EmailData, ch
             userId: userId,
             embedding: embedding,
             metadata: {
-                source: 'gmail',
+                source,
                 externalId: emailData.id,
                 subject: emailData.subject,
                 clientEmail: emailData.from, // Extract this from headers
-                type: 'email_chunk'
+                type: emailData.type
             }
         });
     }

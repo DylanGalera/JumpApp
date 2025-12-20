@@ -3,6 +3,7 @@ import { User } from "../../models/users";
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken'
 import { syncUserGmail } from "../../services/gmail.service";
+import { syncHubspotData } from "backend/src/services/hubspot.sync";
 
 export const authCheck = async (req: Request, res: Response) => {
     try {
@@ -26,6 +27,13 @@ export const authCheck = async (req: Request, res: Response) => {
         }).catch(err =>
             console.error("Initial sync failed:", err)
         );
+
+        syncHubspotData(user._id.toString())
+
+        delete user.refreshToken
+        delete user.accessToken
+        delete user.hubspotTokens?.access_token
+        delete user.hubspotTokens?.refresh_token
 
         return res.status(200).json({ success: true, user, name: '' } as RVerifyCodeResult);
 

@@ -4,7 +4,8 @@ export const ROUTES_NAMES = {
         apis: {
             login: '/login',
             check: '/check',
-            logout: '/logout'
+            logout: '/logout',
+            hubspot: '/exchange-hubspot-token'
         }
     },
     INSTRUCTION: {
