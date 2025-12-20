@@ -13,6 +13,8 @@ const KnowledgeSchema = new Schema<TKnowledge>({
         subject: { type: String }
     },
     createdAt: { type: Date, default: Date.now },
+    timestamp: { type: Number, required: true },
+    uniqueId: { type: String, require: true, unique: true }
 });
 
 export const KNowledge = model<TKnowledge>('KnowledgeBase', KnowledgeSchema);

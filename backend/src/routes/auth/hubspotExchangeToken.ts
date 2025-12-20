@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { Client } from '@hubspot/api-client';
 import { User } from '../../models/users';
 import jwt from 'jsonwebtoken'
+import { syncHubspotData } from '../../services/hubspot.sync';
 
 export const hubspotExchangeToken = async (req: Request, res: Response) => {
     const { code } = req.body as PVerifyCodeParams
@@ -31,6 +32,8 @@ export const hubspotExchangeToken = async (req: Request, res: Response) => {
                 lastSyncedAt: Date.now()
             }
         });
+
+        syncHubspotData(decoded.userId)
         res.status(200).json(true);
     } catch (error) {
         console.log(">>>", error)

@@ -4,9 +4,8 @@ import { KNowledge } from '../models/knowledge';
 import { vectorizeAndStore } from './vectorize.service';
 import { User } from '../models/users';
 import { chunker } from './chunker';
+import { MAX_FETCH_DAYS, ONE_DAY_MS } from '@financial-ai/types';
 
-const INITIAL_EMAIL_DAYS = 5
-const ONE_DAY_MS = 86400000
 
 const decodeBase64Url = (data: string): string => {
     // Gmail uses '-' instead of '+' and '_' instead of '/'
@@ -28,53 +27,67 @@ const getPlainText = (payload: any): string => {
 };
 
 export async function syncUserGmail(userId: string, tokens: Credentials) {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId)
     if (!user) return
-    const lastSyncedAt = user.lastSyncedAt
-    const auth = new OAuth2Client(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET
-    );
-    auth.setCredentials(tokens);
+    if (user.gmailSyncing) return
 
-    const gmail = google.gmail({ version: 'v1', auth });
+    try {
+        user.gmailSyncing = true
+        await user.save()
 
-    const lastSync = lastSyncedAt
-        ? Math.floor(lastSyncedAt / 1000)
-        : Math.floor((Date.now() - (ONE_DAY_MS * INITIAL_EMAIL_DAYS)) / 1000);
+        const lastRec = await KNowledge.aggregate([
+            { $match: { userId, 'metadata.source': 'gmail' } },
+            { $group: { _id: null, last: { $max: '$timestamp' } } }
+        ])
 
-    const listResponse = await gmail.users.messages.list({
-        userId: 'me',
-        maxResults: 50,
-        q: `after:${lastSync}`
-    });
+        const lastSyncedAt: number = lastRec.length ? lastRec[0].last : (Date.now() - (ONE_DAY_MS * MAX_FETCH_DAYS))
 
-    const messages = listResponse.data.messages || [];
+        const auth = new OAuth2Client(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET
+        );
 
-    for (const msg of messages) {
-        const existing = await KNowledge.findOne({ "metadata.externalId": msg.id, userId });
-        if (existing) continue;
+        auth.setCredentials(tokens);
 
-        const details = await gmail.users.messages.get({
+        const gmail = google.gmail({ version: 'v1', auth });
+
+        const lastSync = Math.floor(lastSyncedAt / 1000)
+
+        const listResponse = await gmail.users.messages.list({
             userId: 'me',
-            id: msg.id,
-            format: 'full'
+            maxResults: 50,
+            q: `after:${lastSync}`
         });
 
-        const headers = details.data.payload?.headers || [];
-        const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
-        const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+        const messages = listResponse.data.messages || [];
 
-        // Use the recursive helper to find and decode the body
-        const rawBody = getPlainText(details.data.payload);
+        for (const msg of messages) {
+            const existing = await KNowledge.findOne({ "metadata.externalId": msg.id, userId });
+            if (existing) continue;
 
-        if (!rawBody) continue;
+            const details = await gmail.users.messages.get({
+                userId: 'me',
+                id: msg.id,
+                format: 'full'
+            });
+
+            const headers = details.data.payload?.headers || [];
+            const subject = headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+            const from = headers.find(h => h.name === 'From')?.value || 'Unknown';
+
+            // Use the recursive helper to find and decode the body
+            const rawBody = getPlainText(details.data.payload);
+
+            if (!rawBody) continue;
 
 
-        const chunks = await chunker(rawBody)
-        await vectorizeAndStore(userId, { id: msg.id, subject, from, type: 'email_chunk' }, chunks, 'gmail');
+            const chunks = await chunker(rawBody)
+            await vectorizeAndStore(userId, { id: msg.id, subject, from, type: 'email_chunk' }, chunks, 'gmail', Date.now(), msg.id);
+        }
+    } catch (e) {
+        console.log(">>>Error when syncing google", e)
+    } finally {
+        user.gmailSyncing = false
+        await user.save()
     }
-
-    user.lastSyncedAt = Date.now()
-    await user.save();
 }

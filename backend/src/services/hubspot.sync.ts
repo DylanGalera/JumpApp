@@ -3,7 +3,9 @@ import { User } from '../models/users';
 import { chunker } from './chunker';
 import { vectorizeAndStore } from './vectorize.service';
 import { FilterOperatorEnum } from '@hubspot/api-client/lib/codegen/crm/objects/notes';
-const ONE_DAY_MS = 86400000
+import { KNowledge } from '../models/knowledge';
+import { MAX_FETCH_DAYS, ONE_DAY_MS } from '@financial-ai/types';
+
 const hubspotClient = new Client();
 
 async function getValidClient(userId: string) {
@@ -33,88 +35,97 @@ async function getValidClient(userId: string) {
 
 export async function syncHubspotData(userId: string) {
     const user = await User.findById(userId);
-    if (!user) return;
-    if (!user.hubspotTokens) return
+    if (user.hubspotSynching) return
+    if (!user?.hubspotTokens || !user.hubspotTokens.access_token || !user.hubspotTokens.refresh_token) return
+    try {
+        const client = await getValidClient(userId);
 
-    const client = await getValidClient(userId);
+        user.hubspotSynching = true
+        await user.save()
 
-    const lastTime = user.hubspotLastSyncedAt || (Date.now() - ONE_DAY_MS * 10)
+        const lastRecNote = await KNowledge.aggregate([
+            { $match: { userId, 'metadata.source': 'hubspot', 'metadata.type': 'note_chunk' } },
+            { $group: { _id: null, last: { $max: '$timestamp' } } }
+        ])
 
-    let newestTimestamp = user.hubspotLastSyncedAt || 0;
+        const lastTimeNotes: number = lastRecNote.length ? lastRecNote[0].last : (Date.now() - ONE_DAY_MS * MAX_FETCH_DAYS)
 
-    // --- SYNC NOTES ---
-    const notesSearch = await client.crm.objects.notes.searchApi.doSearch({
-        filterGroups: [{
-            filters: [{ propertyName: 'hs_timestamp', operator: FilterOperatorEnum.Gte, value: lastTime.toString() }]
-        }],
-        sorts: ['-hs_timestamp'],
-        properties: ['hs_note_body', 'hs_timestamp'],
-        limit: 200
-    });
+        const notesSearch = await client.crm.objects.notes.searchApi.doSearch({
+            filterGroups: [{
+                filters: [{ propertyName: 'hs_timestamp', operator: FilterOperatorEnum.Gte, value: lastTimeNotes.toString() }]
+            }],
+            sorts: ['-hs_timestamp'],
+            properties: ['hs_note_body', 'hs_timestamp'],
+            limit: 200
+        });
 
-    for (const note of notesSearch.results) {
-        const text = note.properties.hs_note_body || "";
-        const modDate = new Date(note.properties.hs_timestamp).getTime();
-        if (modDate > newestTimestamp) newestTimestamp = modDate;
+        for (const note of notesSearch.results) {
+            const text = note.properties.hs_note_body || "";
+            const modDate = new Date(note.properties.hs_timestamp).getTime();
 
-        //const associatedContactId = note.associations?.contacts?.results?.[0]?.id;
+            const fullNote = await client.crm.objects.notes.basicApi.getById(
+                note.id,
+                ['hs_note_body'],
+                undefined,
+                ['contact'] // Explicitly request contact associations here
+            );
 
-        const fullNote = await client.crm.objects.notes.basicApi.getById(
-            note.id,
-            ['hs_note_body'],
-            undefined,
-            ['contact'] // Explicitly request contact associations here
-        );
+            const associatedContactId = fullNote.associations?.contacts?.results?.[0]?.id;
 
-        const associatedContactId = fullNote.associations?.contacts?.results?.[0]?.id;
+            let contactEmail = 'Unknown';
 
-        let contactEmail = 'Unknown';
+            if (associatedContactId) {
+                const contact = await client.crm.contacts.basicApi.getById(associatedContactId, ['email']);
+                contactEmail = contact.properties.email || 'No Email';
+            }
 
-        if (associatedContactId) {
-            const contact = await client.crm.contacts.basicApi.getById(associatedContactId, ['email']);
-            contactEmail = contact.properties.email || 'No Email';
+            const chunks = await chunker(text);
+            if (!chunks.length) continue
+            const subject = chunks[0].split('\n')[0].substring(0, 50) + "...";
+
+            await vectorizeAndStore(userId, {
+                id: note.id,
+                from: contactEmail,
+                subject,
+                type: 'note_chunk'
+            }, chunks, 'hubspot', modDate, note.id);
         }
 
-        const chunks = await chunker(text);
-        if (!chunks.length) continue
-        const subject = chunks[0].split('\n')[0].substring(0, 50) + "...";
+        const lastRecContacts = await KNowledge.aggregate([
+            { $match: { userId, 'metadata.source': 'hubspot', 'metadata.type': 'contact' } },
+            { $group: { _id: null, last: { $max: '$timestamp' } } }
+        ])
 
-        await vectorizeAndStore(userId, {
-            id: note.id,
-            from: contactEmail,
-            subject,
-            type: 'note_chunk'
-        }, chunks, 'hubspot');
+        const lastTimeContacts: number = lastRecContacts.length ? lastRecContacts[0].last : (Date.now() - ONE_DAY_MS * MAX_FETCH_DAYS)
+
+        const contactSearch = await client.crm.contacts.searchApi.doSearch({
+            filterGroups: [{
+                filters: [{ propertyName: 'lastmodifieddate', operator: FilterOperatorEnum.Gte, value: lastTimeContacts.toString() }]
+            }],
+            sorts: ['-lastmodifieddate'],
+            properties: ['hs_object_id', 'firstname', 'lastname', 'email', 'jobtitle', 'company', 'lifecyclestage', 'city', 'lastmodifieddate'],
+            limit: 200
+        });
+
+        for (const contact of contactSearch.results) {
+            const p = contact.properties;
+            const modDate = new Date(p.lastmodifieddate).getTime();
+
+            const contactInfo = `Contact: ${p.firstname} ${p.lastname} (${p.email}). ` +
+                `Job Title: ${p.jobtitle || 'N/A'}. Company: ${p.company || 'N/A'}. ` +
+                `Status: ${p.lifecyclestage}. Location: ${p.city || 'Unknown'}.`;
+
+            await vectorizeAndStore(userId, {
+                id: contact.id,
+                from: p.email,
+                subject: `${p.firstname} ${p.lastname}`,
+                type: 'contact'
+            }, [contactInfo], 'hubspot', modDate, p.hs_object_id);
+        }
+    } catch (e) {
+        console.log(">>>Error when syncing hubspot", e)
+    } finally {
+        user.hubspotSynching = false
+        await user.save()
     }
-
-    // --- SYNC CONTACTS ---
-    const contactSearch = await client.crm.contacts.searchApi.doSearch({
-        filterGroups: [{
-            filters: [{ propertyName: 'lastmodifieddate', operator: FilterOperatorEnum.Gte, value: lastTime.toString() }]
-        }],
-        sorts: ['-lastmodifieddate'],
-        properties: ['firstname', 'lastname', 'email', 'jobtitle', 'company', 'lifecyclestage', 'city', 'lastmodifieddate'],
-        limit: 200
-    });
-
-    for (const contact of contactSearch.results) {
-        const p = contact.properties;
-        const modDate = new Date(p.lastmodifieddate).getTime();
-        if (modDate > newestTimestamp) newestTimestamp = modDate;
-
-        const contactInfo = `Contact: ${p.firstname} ${p.lastname} (${p.email}). ` +
-            `Job Title: ${p.jobtitle || 'N/A'}. Company: ${p.company || 'N/A'}. ` +
-            `Status: ${p.lifecyclestage}. Location: ${p.city || 'Unknown'}.`;
-
-        await vectorizeAndStore(userId, {
-            id: contact.id,
-            from: p.email,
-            subject: `${p.firstname} ${p.lastname}`,
-            type: 'contact'
-        }, [contactInfo], 'hubspot');
-    }
-
-    // 2. Update the user's sync timestamp to the latest date found
-    user.hubspotLastSyncedAt = newestTimestamp + 1;
-    await user.save();
 }

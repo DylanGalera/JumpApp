@@ -10,4 +10,6 @@ export type TKnowledge = {
         subject?: string
     };
     createdAt: Date;
+    timestamp: number,
+    uniqueId: string
 }

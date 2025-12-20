@@ -5,11 +5,24 @@ import cors from 'cors'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import { User } from './models/users';
 
 dotenv.config();
 
 const connectDB = async () => {
   try {
+    mongoose.connection.once('open', async () => {
+      console.log('Running startup database queries...');
+      try {
+        const result = await User.updateMany(
+          { $or: [{ hubspotSynching: true }, { gmailSyncing: true }] },
+          { $set: { hubspotSynching: false, gmailSyncing: false } }
+        );
+        console.log(`Startup cleanup: Reset ${result.modifiedCount} zombie locks.`);
+      } catch (err) {
+        console.error("Startup query failed:", err);
+      }
+    });
     const conn = await mongoose.connect(process.env.MONGO_URI as string);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {

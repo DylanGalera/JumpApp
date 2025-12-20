@@ -3,33 +3,40 @@ import { KNowledge } from '../models/knowledge';
 
 const hf = new InferenceClient(process.env.HF_TOKEN);
 
-type EmailData = {
+type RecordData = {
     id: string,
     subject: string,
     from: string
     type: 'contact' | 'note_chunk' | 'email_chunk'
 }
 
-export async function vectorizeAndStore(userId: string, emailData: EmailData, chunks: string[], source: 'gmail' | 'hubspot') {
+export async function vectorizeAndStore(userId: string, recordData: RecordData, chunks: string[], source: 'gmail' | 'hubspot', timestamp: number, recordId: string) {
+    let chunkId = 0
     for (const chunk of chunks) {
-        // 1. Generate Embedding
-        const embedding = [] /*await hf.featureExtraction({
+        chunkId++
+        try {
+            const embedding = [] /*await hf.featureExtraction({
             model: "sentence-transformers/all-MiniLM-L6-v2",
             inputs: chunk,
             provider: "hf-inference"
         }) as number[];*/
 
-        await KNowledge.create({
-            content: chunk,
-            userId: userId,
-            embedding: embedding,
-            metadata: {
-                source,
-                externalId: emailData.id,
-                subject: emailData.subject,
-                clientEmail: emailData.from, // Extract this from headers
-                type: emailData.type
-            }
-        });
+            await KNowledge.create({
+                content: chunk,
+                userId: userId,
+                embedding: embedding,
+                metadata: {
+                    source,
+                    externalId: recordData.id,
+                    subject: recordData.subject,
+                    clientEmail: recordData.from, // Extract this from headers
+                    type: recordData.type
+                },
+                timestamp,
+                uniqueId: `${source}_${recordData.type}_${recordId}_${chunkId}`
+            });
+        } catch {
+
+        }
     }
 }
