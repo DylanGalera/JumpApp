@@ -26,6 +26,7 @@ export const Login = () => {
         },
         onError: (error) => console.log('Login Failed:', error),
         flow: 'auth-code', // CRITICAL: This ensures you get a 'code' and not a 'token'
+        scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events',
     });
 
     return (

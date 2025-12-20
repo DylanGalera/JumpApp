@@ -1,7 +1,4 @@
-import { PVerifyCodeParams, RVerifyCodeResult } from "@financial-ai/types";
-import { User } from "../../models/users";
 import { Request, Response } from 'express';
-import { OAuth2Client } from 'google-auth-library';
 import { LOGIN_COOCKIE_PARAMS } from "./login";
 
 export async function authLogout(req: Request, res: Response) {

@@ -1,6 +1,7 @@
 import express from 'express';
 import { ROUTES_NAMES } from '@financial-ai/types'
 import auth from './routes/auth'
+import instruction from './routes/instruction'
 import cors from 'cors'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -41,3 +42,4 @@ app.listen(3000, 'localhost', () => {
 });
 
 app.use(ROUTES_NAMES.AUTH.name, auth)
+app.use(ROUTES_NAMES.INSTRUCTION.name, instruction)

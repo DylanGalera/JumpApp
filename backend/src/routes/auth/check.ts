@@ -1,15 +1,8 @@
-import { PVerifyCodeParams, RVerifyCodeResult } from "@financial-ai/types";
+import { RVerifyCodeResult } from "@financial-ai/types";
 import { User } from "../../models/users";
 import { Request, Response } from 'express';
-import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken'
-
-
-const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    'postmessage'
-);
+import { syncUserGmail } from "../../services/gmail.service";
 
 export const authCheck = async (req: Request, res: Response) => {
     try {
@@ -26,6 +19,14 @@ export const authCheck = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(401).json({ authenticated: false, message: 'User no longer exists' });
         }
+
+        syncUserGmail(user.lastSyncedAt || 0, user._id.toString(), {
+            access_token: user.accessToken,
+            refresh_token: user.refreshToken
+        }).catch(err =>
+            console.error("Initial sync failed:", err)
+        );
+
         return res.status(200).json({ success: true, user, name: '' } as RVerifyCodeResult);
 
     } catch (error) {

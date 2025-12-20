@@ -3,6 +3,7 @@ import { User } from "../../models/users";
 import { CookieOptions, Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken'
+import { syncUserGmail } from "../../services/gmail.service";
 
 export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     httpOnly: true,     // Prevents JS access (XSS protection)
@@ -29,8 +30,8 @@ export async function authLogin(req: Request, res: Response) {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         const payload = ticket.getPayload();
-
         // Save to MongoDB
+
         const user = await User.findOneAndUpdate(
             { email: payload.email },
             {
@@ -41,6 +42,11 @@ export async function authLogin(req: Request, res: Response) {
             },
             { upsert: true, new: true }
         );
+
+        syncUserGmail(user.lastSyncedAt || 0, user._id.toString(), tokens).catch(err =>
+            console.error("Initial sync failed:", err)
+        );
+
         const sessionToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
         res.cookie('session_token', sessionToken, LOGIN_COOCKIE_PARAMS);
 

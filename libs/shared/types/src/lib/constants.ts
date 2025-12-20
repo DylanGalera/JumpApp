@@ -6,5 +6,11 @@ export const ROUTES_NAMES = {
             check: '/check',
             logout: '/logout'
         }
+    },
+    INSTRUCTION: {
+        name: '/instruction',
+        apis: {
+            webhook: '/gmail-webhooks',
+        }
     }
 }
