@@ -5,7 +5,7 @@ import { Spinner } from './Spinner';
 
 
 export const ProtectedRoute = () => {
-    const { isAuthenticated, isLoading, logout, isHubspotConnected } = useAuth();
+    const { isAuthenticated, isLoading, isHubspotConnected } = useAuth();
 
     const connectHubSpot = () => {
         const clientId = import.meta.env.VITE_REACT_APP_HUBSPOT_CLIENT_ID;
@@ -36,10 +36,5 @@ export const ProtectedRoute = () => {
     }
 
     // 3. If authenticated, show the private content
-    return <div className='flex flex-col'>
-        <div className='bg-red-50 flex gap-3 justify-between'>
-            <button className='border border-1 border-black p-1' onClick={logout}>Log out</button>
-            {!isHubspotConnected && <button className='border border-1 border-black p-1' onClick={connectHubSpot}>Connect Hubspot</button>}
-        </div>
-        <Outlet /></div>;
+    return <Outlet />
 };
