@@ -11,4 +11,10 @@ export const ROUTES_NAMES = {
             hubspot: '/exchange-hubspot-token'
         }
     },
+    AI: {
+        name: '/ai',
+        apis: {
+            ask: '/ask',
+        }
+    },
 }

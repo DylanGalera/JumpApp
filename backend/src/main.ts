@@ -1,11 +1,13 @@
 import express from 'express';
 import { ROUTES_NAMES } from '@financial-ai/types'
 import auth from './routes/auth'
+import ai from './routes/ai'
 import cors from 'cors'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { User } from './models/users';
+import { askAiAgent } from './services/ai.ask';
 
 dotenv.config();
 
@@ -22,6 +24,8 @@ const connectDB = async () => {
       } catch (err) {
         console.error("Startup query failed:", err);
       }
+
+      console.log("--->",await askAiAgent('6946e5c1272dd15620a4049d','Who is Sharon Rasmussen'))
     });
     const conn = await mongoose.connect(process.env.MONGO_URI as string);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
@@ -54,4 +58,4 @@ app.listen(3000, 'localhost', () => {
 });
 
 app.use(ROUTES_NAMES.AUTH.name, auth)
-
+app.use(ROUTES_NAMES.AI.name, ai)

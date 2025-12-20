@@ -9,3 +9,11 @@ export interface RVerifyCodeResult {
   user: TUser
   name: string
 }
+
+export interface PAskAI {
+  question: string
+}
+
+export interface RAskAI {
+  response: string
+}
