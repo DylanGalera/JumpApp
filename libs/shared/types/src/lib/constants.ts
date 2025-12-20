@@ -8,10 +8,4 @@ export const ROUTES_NAMES = {
             hubspot: '/exchange-hubspot-token'
         }
     },
-    INSTRUCTION: {
-        name: '/instruction',
-        apis: {
-            webhook: '/gmail-webhooks',
-        }
-    }
 }

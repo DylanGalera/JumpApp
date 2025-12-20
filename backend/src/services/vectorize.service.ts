@@ -7,7 +7,7 @@ type EmailData = {
     id: string,
     subject: string,
     from: string
-    type: 'contact' | 'note_chunk' | 'email_chunk' | 'email_address'
+    type: 'contact' | 'note_chunk' | 'email_chunk'
 }
 
 export async function vectorizeAndStore(userId: string, emailData: EmailData, chunks: string[], source: 'gmail' | 'hubspot') {

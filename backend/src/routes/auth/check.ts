@@ -21,14 +21,13 @@ export const authCheck = async (req: Request, res: Response) => {
             return res.status(401).json({ authenticated: false, message: 'User no longer exists' });
         }
 
-        syncUserGmail(user.lastSyncedAt || 0, user._id.toString(), {
+        syncUserGmail(user._id.toString(), {
             access_token: user.accessToken,
             refresh_token: user.refreshToken
         }).catch(err =>
-            console.error("Initial sync failed:", err)
+            console.error("Polling sync failed:", err)
         );
 
-        console.log("********",user._id)
         syncHubspotData(user._id.toString())
 
         delete user.refreshToken

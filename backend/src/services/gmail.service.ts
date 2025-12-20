@@ -6,7 +6,7 @@ import { User } from '../models/users';
 import { chunker } from './chunker';
 
 const INITIAL_EMAIL_DAYS = 5
-const ONE_DAY = 86400
+const ONE_DAY_MS = 86400000
 
 const decodeBase64Url = (data: string): string => {
     // Gmail uses '-' instead of '+' and '_' instead of '/'
@@ -27,8 +27,10 @@ const getPlainText = (payload: any): string => {
     return '';
 };
 
-export async function syncUserGmail(lastSyncedAt: number, userId: string, tokens: Credentials) {
+export async function syncUserGmail(userId: string, tokens: Credentials) {
     const user = await User.findById(userId);
+    if (!user) return
+    const lastSyncedAt = user.lastSyncedAt
     const auth = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET
@@ -39,7 +41,7 @@ export async function syncUserGmail(lastSyncedAt: number, userId: string, tokens
 
     const lastSync = lastSyncedAt
         ? Math.floor(lastSyncedAt / 1000)
-        : Math.floor(Date.now() / 1000) - ONE_DAY * INITIAL_EMAIL_DAYS;
+        : Math.floor((Date.now() - (ONE_DAY_MS * INITIAL_EMAIL_DAYS)) / 1000);
 
     const listResponse = await gmail.users.messages.list({
         userId: 'me',

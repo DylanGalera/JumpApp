@@ -3,7 +3,7 @@ import { User } from '../models/users';
 import { chunker } from './chunker';
 import { vectorizeAndStore } from './vectorize.service';
 import { FilterOperatorEnum } from '@hubspot/api-client/lib/codegen/crm/objects/notes';
-const ONE_DAY = 86400
+const ONE_DAY_MS = 86400000
 const hubspotClient = new Client();
 
 async function getValidClient(userId: string) {
@@ -38,9 +38,8 @@ export async function syncHubspotData(userId: string) {
 
     const client = await getValidClient(userId);
 
-    const lastTime = user.hubspotLastSyncedAt || Date.now() - ONE_DAY * 1000 * 10
-    // 1. Prepare the high-water mark timestamp (ISO string for HubSpot API)
-    const lastSyncDate = new Date(lastTime).toISOString();
+    const lastTime = user.hubspotLastSyncedAt || (Date.now() - ONE_DAY_MS * 10)
+
     let newestTimestamp = user.hubspotLastSyncedAt || 0;
 
     // --- SYNC NOTES ---

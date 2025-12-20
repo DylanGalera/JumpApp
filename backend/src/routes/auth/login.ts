@@ -44,7 +44,7 @@ export async function authLogin(req: Request, res: Response) {
             { upsert: true, new: true }
         );
 
-        syncUserGmail(user.lastSyncedAt || 0, user._id.toString(), tokens).catch(err =>
+        syncUserGmail(user._id.toString(), tokens).catch(err =>
             console.error("Initial sync failed:", err)
         );
 
