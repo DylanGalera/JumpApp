@@ -1,5 +1,5 @@
 import { KNowledge } from "../models/knowledge";
-import { callAiAPI } from "./askGemni";
+import { callAiAPI } from "./callAIApi";
 import { hfClient } from "./vectorize.service";
 
 
@@ -27,6 +27,7 @@ export async function askAiAgent(userId: string, question: string): Promise<stri
                 }
             }
         ]);
+
         const contextText = contextDocs.map(doc => doc.content).join("\n\n");
         const response = await callAiAPI(contextText, question)
         return response

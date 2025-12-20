@@ -25,7 +25,7 @@ const connectDB = async () => {
         console.error("Startup query failed:", err);
       }
 
-      console.log("--->",await askAiAgent('6946e5c1272dd15620a4049d','Who is Sharon Rasmussen'))
+      //console.log("--->",await askAiAgent('6946e5c1272dd15620a4049d','Who is Alex'))
     });
     const conn = await mongoose.connect(process.env.MONGO_URI as string);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);

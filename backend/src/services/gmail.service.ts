@@ -4,7 +4,7 @@ import { KNowledge } from '../models/knowledge';
 import { vectorizeAndStore } from './vectorize.service';
 import { User } from '../models/users';
 import { chunker } from './chunker';
-import { MAX_FETCH_DAYS, ONE_DAY_MS } from '@financial-ai/types';
+import { MAX_FETCH_DAYS, MAX_FETCH_RECORDS, ONE_DAY_MS } from '@financial-ai/types';
 
 
 const decodeBase64Url = (data: string): string => {
@@ -55,7 +55,7 @@ export async function syncUserGmail(userId: string, tokens: Credentials) {
 
         const listResponse = await gmail.users.messages.list({
             userId: 'me',
-            maxResults: 50,
+            maxResults: MAX_FETCH_RECORDS,
             q: `after:${lastSync}`
         });
 
@@ -81,8 +81,10 @@ export async function syncUserGmail(userId: string, tokens: Credentials) {
             if (!rawBody) continue;
 
 
+            const internalDateMs = parseInt(details.data.internalDate);
+
             const chunks = await chunker(rawBody)
-            await vectorizeAndStore(userId, { id: msg.id, subject, from, type: 'email_chunk' }, chunks, 'gmail', Date.now(), msg.id);
+            await vectorizeAndStore(userId, { id: msg.id, subject, from, type: 'email_chunk' }, chunks, 'gmail', internalDateMs, msg.id);
         }
     } catch (e) {
         console.log(">>>Error when syncing google", e)

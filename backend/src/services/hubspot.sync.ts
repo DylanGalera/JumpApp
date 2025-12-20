@@ -4,7 +4,7 @@ import { chunker } from './chunker';
 import { vectorizeAndStore } from './vectorize.service';
 import { FilterOperatorEnum } from '@hubspot/api-client/lib/codegen/crm/objects/notes';
 import { KNowledge } from '../models/knowledge';
-import { MAX_FETCH_DAYS, ONE_DAY_MS } from '@financial-ai/types';
+import { MAX_FETCH_DAYS, MAX_FETCH_RECORDS, ONE_DAY_MS } from '@financial-ai/types';
 
 const hubspotClient = new Client();
 
@@ -56,7 +56,7 @@ export async function syncHubspotData(userId: string) {
             }],
             sorts: ['-hs_timestamp'],
             properties: ['hs_note_body', 'hs_timestamp'],
-            limit: 200
+            limit: MAX_FETCH_RECORDS
         });
 
         for (const note of notesSearch.results) {
@@ -104,7 +104,7 @@ export async function syncHubspotData(userId: string) {
             }],
             sorts: ['-lastmodifieddate'],
             properties: ['hs_object_id', 'firstname', 'lastname', 'email', 'jobtitle', 'company', 'lifecyclestage', 'city', 'lastmodifieddate'],
-            limit: 200
+            limit: MAX_FETCH_RECORDS
         });
 
         for (const contact of contactSearch.results) {
