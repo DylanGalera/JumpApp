@@ -13,11 +13,11 @@ type EmailData = {
 export async function vectorizeAndStore(userId: string, emailData: EmailData, chunks: string[], source: 'gmail' | 'hubspot') {
     for (const chunk of chunks) {
         // 1. Generate Embedding
-        const embedding = await hf.featureExtraction({
+        const embedding = [] /*await hf.featureExtraction({
             model: "sentence-transformers/all-MiniLM-L6-v2",
             inputs: chunk,
             provider: "hf-inference"
-        }) as number[];
+        }) as number[];*/
 
         await KNowledge.create({
             content: chunk,

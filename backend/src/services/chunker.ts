@@ -1,5 +1,12 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-export async function chunker(text: string): Promise<string[]> {
+const clearHtml = (text: string): string => {
+    return text
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+export async function chunker(rawText: string): Promise<string[]> {
+    const text = clearHtml(rawText)
     const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
         chunkOverlap: 200,

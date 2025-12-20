@@ -27,13 +27,6 @@ const getPlainText = (payload: any): string => {
     return '';
 };
 
-const cleanEmailBody = (text: string): string => {
-    return text
-        .replace(/<[^>]*>/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-};
-
 export async function syncUserGmail(lastSyncedAt: number, userId: string, tokens: Credentials) {
     const user = await User.findById(userId);
     const auth = new OAuth2Client(
@@ -72,12 +65,11 @@ export async function syncUserGmail(lastSyncedAt: number, userId: string, tokens
 
         // Use the recursive helper to find and decode the body
         const rawBody = getPlainText(details.data.payload);
-        const cleanedText = cleanEmailBody(rawBody);
 
-        if (!cleanedText) continue;
+        if (!rawBody) continue;
 
 
-        const chunks = await chunker(cleanedText)
+        const chunks = await chunker(rawBody)
         await vectorizeAndStore(userId, { id: msg.id, subject, from, type: 'email_chunk' }, chunks, 'gmail');
     }
 

@@ -4,7 +4,7 @@ import { CookieOptions, Request, Response, urlencoded } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken'
 import { syncUserGmail } from "../../services/gmail.service";
-import { syncHubspotData } from "backend/src/services/hubspot.sync";
+import { syncHubspotData } from "../../services/hubspot.sync";
 
 export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     httpOnly: true,     // Prevents JS access (XSS protection)

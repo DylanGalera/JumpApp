@@ -1,5 +1,5 @@
 import { ROUTES_NAMES, RVerifyCodeResult, TUser } from '@financial-ai/types';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { post } from '../services';
 
 interface AuthContextType {
@@ -24,7 +24,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { ...u, hubspotTokens: { lastSyncedAt: 1, access_token: '', refresh_token: '', expiresAt: 0 } }
     })
   }
+
+  const restrict = useRef(false)
   useEffect(() => {
+    if (restrict.current) return
+    restrict.current = true
     const checkAuth = async () => {
       try {
         const result = await post<any, RVerifyCodeResult>(ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.check, {})

@@ -3,14 +3,14 @@ import { User } from '../models/users';
 import { chunker } from './chunker';
 import { vectorizeAndStore } from './vectorize.service';
 import { FilterOperatorEnum } from '@hubspot/api-client/lib/codegen/crm/objects/notes';
-
+const ONE_DAY = 86400
 const hubspotClient = new Client();
 
 async function getValidClient(userId: string) {
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
 
-    const { access_token, refresh_token, expiresAt } = user.hubspotTokens;
+    const { refresh_token, expiresAt } = user.hubspotTokens;
 
     if (new Date() >= new Date(expiresAt)) {
         const result = await hubspotClient.oauth.tokensApi.create(
@@ -35,25 +35,27 @@ export async function syncHubspotData(userId: string) {
     const user = await User.findById(userId);
     if (!user) return;
     if (!user.hubspotTokens) return
+
     const client = await getValidClient(userId);
 
+    const lastTime = user.hubspotLastSyncedAt || Date.now() - ONE_DAY * 1000 * 10
     // 1. Prepare the high-water mark timestamp (ISO string for HubSpot API)
-    const lastSyncDate = new Date(user.hubspotLastSyncedAt || 0).toISOString();
+    const lastSyncDate = new Date(lastTime).toISOString();
     let newestTimestamp = user.hubspotLastSyncedAt || 0;
 
     // --- SYNC NOTES ---
     const notesSearch = await client.crm.objects.notes.searchApi.doSearch({
         filterGroups: [{
-            filters: [{ propertyName: 'lastmodifieddate', operator: FilterOperatorEnum.Gte, value: lastSyncDate }]
+            filters: [{ propertyName: 'hs_timestamp', operator: FilterOperatorEnum.Gte, value: lastTime.toString() }]
         }],
-        sorts: ['-lastmodifieddate'],
-        properties: ['hs_note_body', 'hs_timestamp', 'lastmodifieddate'],
-        limit: 100
+        sorts: ['-hs_timestamp'],
+        properties: ['hs_note_body', 'hs_timestamp'],
+        limit: 200
     });
 
     for (const note of notesSearch.results) {
         const text = note.properties.hs_note_body || "";
-        const modDate = new Date(note.properties.lastmodifieddate).getTime();
+        const modDate = new Date(note.properties.hs_timestamp).getTime();
         if (modDate > newestTimestamp) newestTimestamp = modDate;
 
         //const associatedContactId = note.associations?.contacts?.results?.[0]?.id;
@@ -75,7 +77,8 @@ export async function syncHubspotData(userId: string) {
         }
 
         const chunks = await chunker(text);
-        const subject = text.split('\n')[0].substring(0, 50) + "...";
+        if (!chunks.length) continue
+        const subject = chunks[0].split('\n')[0].substring(0, 50) + "...";
 
         await vectorizeAndStore(userId, {
             id: note.id,
@@ -88,11 +91,11 @@ export async function syncHubspotData(userId: string) {
     // --- SYNC CONTACTS ---
     const contactSearch = await client.crm.contacts.searchApi.doSearch({
         filterGroups: [{
-            filters: [{ propertyName: 'lastmodifieddate', operator: FilterOperatorEnum.Gte, value: lastSyncDate }]
+            filters: [{ propertyName: 'lastmodifieddate', operator: FilterOperatorEnum.Gte, value: lastTime.toString() }]
         }],
         sorts: ['-lastmodifieddate'],
         properties: ['firstname', 'lastname', 'email', 'jobtitle', 'company', 'lifecyclestage', 'city', 'lastmodifieddate'],
-        limit: 100
+        limit: 200
     });
 
     for (const contact of contactSearch.results) {
@@ -113,6 +116,6 @@ export async function syncHubspotData(userId: string) {
     }
 
     // 2. Update the user's sync timestamp to the latest date found
-    user.hubspotLastSyncedAt = newestTimestamp;
+    user.hubspotLastSyncedAt = newestTimestamp + 1;
     await user.save();
 }
