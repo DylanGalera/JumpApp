@@ -12,6 +12,8 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken'
 import { askAiAgent } from './services/ai.ask';
 
+const PORT = process.env.PORT || '4000';
+
 export interface CustomRequest extends Request {
   io: Server;
 }
@@ -67,8 +69,9 @@ app.get('/', (req, res) => {
   res.send({ message: 'Hello API' });
 });
 
-server.listen(process.env.PORT || 4000, () => {
-  console.log(`[ ready ] http://localhost:3000`);
+server.listen(parseInt(PORT), '0.0.0.0', () => {
+  // Use 0.0.0.0 so Render's internal network can route to it
+  console.log(`[ ready ] Listening on port ${PORT}`);
 });
 
 app.use(ROUTES_NAMES.AUTH.name, auth)
