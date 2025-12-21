@@ -17,3 +17,8 @@ export interface PAskAI {
 export interface RAskAI {
   response: string
 }
+
+export type IChatHistory = {
+  role: 'user' | 'assistant',
+  content: string,
+}

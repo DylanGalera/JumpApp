@@ -89,5 +89,8 @@ export async function processNewKnowledge(userId: string, newChunk: string, data
         3. If no action is needed, reply 'No action'.
     `;
 
-    return await askAiAgent(userId, prompt);
+    return await askAiAgent(userId, [{
+        content: prompt,
+        role: 'user'
+    }]);
 }

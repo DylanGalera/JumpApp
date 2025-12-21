@@ -31,7 +31,10 @@ export function ChatBot() {
     useEffect(() => {
         socket.connect();
         socket.on('connect', () => setIsConnected(true));
-        socket.on('disconnect', () => setIsConnected(false));
+        socket.on('disconnect', () => {
+            setIsConnected(false)
+            setMessages([])
+        });
         socket.on('receive', (msg: string) => {
             setIsLoading(false);
             setMessages(prev => [...prev, { role: 'assistant', content: msg }]);

@@ -15,19 +15,17 @@ const root = ReactDOM.createRoot(
 );
 
 root.render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <ToastContainer />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<ProtectedRoute />}>
-              <Route index element={<ChatBot />} />
-              <Route path='/hubSpotAuth' element={<HubSpotAuth />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </GoogleOAuthProvider>
-  </StrictMode>,
+  <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <ToastContainer />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ProtectedRoute />}>
+            <Route index element={<ChatBot />} />
+            <Route path='/hubSpotAuth' element={<HubSpotAuth />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  </GoogleOAuthProvider>
 );

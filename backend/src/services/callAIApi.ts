@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { Instruction } from '../models/instruction';
 import { Task } from '../models/tasks';
+import { IChatHistory } from '@financial-ai/types';
 
 export const grogClient = new OpenAI({
     apiKey: process.env.GROG_API_KEY, // Groq/Mistral/OpenRouter Key
@@ -40,7 +41,7 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     }
 ];
 
-export async function callAiAPI(contextText: string, question: string, userId: string) {
+export async function callAiAPI(contextText: string, userId: string, history?: IChatHistory[]) {
     try {
         let messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
             {
@@ -48,8 +49,12 @@ export async function callAiAPI(contextText: string, question: string, userId: s
                 content: `You are a proactive Financial Advisor AI. 
           Context from HubSpot/Gmail: ${contextText || "No context found."}`
             },
-            { role: "user", content: question }
         ];
+
+        history.forEach(h => messages.push({
+            role: h.role == 'user' ? "user" : "assistant",
+            content: h.content
+        }))
 
         const response = await grogClient.chat.completions.create({
             model: "llama-3.3-70b-versatile",

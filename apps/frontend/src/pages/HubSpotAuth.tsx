@@ -9,11 +9,9 @@ export function HubSpotAuth() {
     const { setHubSpot } = useAuth()
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const restrict = useRef(false)
+
     useEffect(() => {
         const code = searchParams.get('code');
-        if (restrict.current) return
-        restrict.current = true
         if (code) {
             post<PVerifyCodeParams, boolean>(ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.hubspot, { code })
                 .then((r) => {

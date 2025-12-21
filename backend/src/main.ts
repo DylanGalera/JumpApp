@@ -1,7 +1,6 @@
 import express, { Request } from 'express';
-import { ROUTES_NAMES } from '@financial-ai/types'
+import { IChatHistory, ROUTES_NAMES } from '@financial-ai/types'
 import auth from './routes/auth'
-import ai from './routes/ai'
 import cors from 'cors'
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -11,6 +10,7 @@ import { Server } from 'socket.io'
 import http from 'http';
 import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken'
+import { askAiAgent } from './services/ai.ask';
 
 export interface CustomRequest extends Request {
   io: Server;
@@ -73,13 +73,12 @@ server.listen(3000, () => {
 });
 
 app.use(ROUTES_NAMES.AUTH.name, auth)
-app.use(ROUTES_NAMES.AI.name, ai)
 
 io.on('connection', (socket) => {
 
   const cookies = cookie.parse(socket.handshake.headers.cookie || '');
   const token = cookies.session_token
-
+  const history: IChatHistory[] = []
   if (!token) {
     console.log("invalid token kick out user!")
     return socket.emit('exit')
@@ -90,10 +89,22 @@ io.on('connection', (socket) => {
   console.log('User connected via socket', userId);
 
   socket.on('disconnect', (reason) => {
+    while (history.length) history.splice(0)
     console.log(`User ${userId} socket id:${socket.id} disconnected. Reason: ${reason}`);
   });
 
-  socket.on('send', (msg) => {
-    socket.emit('receive', msg)
+  socket.on('send', async (msg) => {
+    history.push({
+      content: msg,
+      role: 'user',
+    })
+    if (history.length > 5) history.shift()
+    const response = await askAiAgent(userId, history)
+    history.push({
+      content: response,
+      role: 'assistant',
+    })
+    if (history.length > 5) history.shift()
+    socket.emit('receive', response)
   })
 });

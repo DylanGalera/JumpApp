@@ -25,10 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     })
   }
 
-  const restrict = useRef(false)
   useEffect(() => {
-    if (restrict.current) return
-    restrict.current = true
     const checkAuth = async () => {
       try {
         const result = await post<any, RVerifyCodeResult>(ROUTES_NAMES.AUTH.name + ROUTES_NAMES.AUTH.apis.check, {})
