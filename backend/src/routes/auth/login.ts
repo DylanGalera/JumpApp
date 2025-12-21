@@ -8,8 +8,8 @@ import { OAuth2Client } from 'google-auth-library';
 
 export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     httpOnly: true,     // Prevents JS access (XSS protection)
-    secure: false,       // Ensures it's only sent over HTTPS (use false for localhost)
-    sameSite: 'lax',    // Helps with cross-site requests
+    secure: true,       // Ensures it's only sent over HTTPS (use false for localhost)
+    sameSite: 'none',    // Helps with cross-site requests
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 }
 
