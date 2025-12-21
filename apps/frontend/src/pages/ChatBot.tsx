@@ -26,7 +26,7 @@ export function ChatBot() {
     const connectHubSpot = () => {
         const clientId = import.meta.env.VITE_REACT_APP_HUBSPOT_CLIENT_ID;
         // 1. This must be the ONE URL whitelisted n HubSpot Dev Portal
-        const redirectUri = "http://localhost:4200/hubSpotAuth";
+        const redirectUri = "https://jumpapp-zeta.vercel.app/hubSpotAuth";
 
         // 3. Put that current URL into the 'state' parameter
         const scopes = "crm.objects.contacts.read crm.objects.deals.read crm.objects.orders.read crm.objects.contacts.write crm.schemas.contacts.write crm.objects.orders.write sales-email-read crm.schemas.contacts.read";

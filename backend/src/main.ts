@@ -47,15 +47,11 @@ connectDB();
 const app = express();
 const server = http.createServer(app); // The shared server
 
-const allowedOrigins = [
-  "http://localhost:4200",       // Nx default for many apps
-  "https://jumpapp-zeta.vercel.app",
-  process.env.FRONT_URL          // Good practice to keep this variable too
-].filter(Boolean);               // Removes undefined values
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins, credentials: true,
+    origin: process.env.FRONT_URL,
+    credentials: true,
     methods: ["GET", "POST"]
   }
 });
