@@ -67,7 +67,7 @@ app.get('/', (req, res) => {
   res.send({ message: 'Hello API' });
 });
 
-server.listen(3000, () => {
+server.listen(process.env.PORT || 4000, () => {
   console.log(`[ ready ] http://localhost:3000`);
 });
 
