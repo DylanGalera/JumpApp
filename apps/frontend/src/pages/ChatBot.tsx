@@ -11,7 +11,7 @@ const URL = (import.meta.env.VITE_SERVER_URL as string) || "http://localhost:300
 
 const socket: Socket = io(URL, {
     autoConnect: false,
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
     withCredentials: true
 });
 
