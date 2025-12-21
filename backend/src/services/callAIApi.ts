@@ -8,6 +8,7 @@ import { sendEmail } from '../tools/sendemail';
 import { setCalendarEvent } from '../tools/setEvent';
 import { addHubspotContact } from '../tools/addContact';
 import { first } from 'cheerio/dist/commonjs/api/traversing';
+import { addHubspotNote } from '../tools/addNote';
 
 /*export const grogClient = new OpenAI({
     apiKey: process.env.GROG_API_KEY, // Groq/Mistral/OpenRouter Key
@@ -109,10 +110,10 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
             parameters: {
                 type: "object",
                 properties: {
-                    contactId: { type: "string", description: "The numerical ID of the HubSpot contact" },
+                    email: { type: "string", description: "Email Address of contact to add a note" },
                     content: { type: "string", description: "The text content of the note" }
                 },
-                required: ["contactId", "content"]
+                required: ["email", "content"]
             }
         }
     },
@@ -195,8 +196,8 @@ export async function Api(userId: string, messages: any[]): Promise<string | nul
                 const { title, start_datetime, duration, description } = args
                 result = await setCalendarEvent(userId, title, start_datetime, duration, description)
             } else if (toolCall.function.name === "add_hubspot_note") {
-                const { contactId, content } = args
-                result = `Created hubspot task: ${args.title} due on ${args.due_date || 'not specified'}`;
+                const { email, content } = args
+                result = await addHubspotNote(userId, email, content)
             } else if (toolCall.function.name === "search_knowledge_base") {
                 const { query } = args;
                 // 1. Vectorize the AI's search query
