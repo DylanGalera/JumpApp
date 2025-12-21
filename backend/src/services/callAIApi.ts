@@ -6,6 +6,8 @@ import { vectorize } from '../tools/vectorizer';
 import { KNowledge } from '../models/knowledge';
 import { sendEmail } from '../tools/sendemail';
 import { setCalendarEvent } from '../tools/setEvent';
+import { addHubspotContact } from '../tools/addContact';
+import { first } from 'cheerio/dist/commonjs/api/traversing';
 
 /*export const grogClient = new OpenAI({
     apiKey: process.env.GROG_API_KEY, // Groq/Mistral/OpenRouter Key
@@ -74,7 +76,8 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 type: "object",
                 properties: {
                     email: { type: "string" },
-                    lifecycle_stage: { type: "string", enum: ["lead", "marketingqualifiedlead", "customer"] },
+                    firstName: { type: 'string', description: 'name of contact' },
+                    lastName: { type: 'string', description: 'last name of contact' },
                     notes: { type: "string" }
                 },
                 required: ["email"]
@@ -186,8 +189,8 @@ export async function Api(userId: string, messages: any[]): Promise<string | nul
                 const { to, subject, body } = args
                 result = await sendEmail(userId, to, subject, body)
             } else if (toolCall.function.name === "update_hubspot_contact") {
-                const { email, lifecycle_stage, notes } = args
-                result = `Updated Hubspot Contact : ${args.title} due on ${args.due_date || 'not specified'}`;
+                const { email, firstName, lastName, notes } = args
+                result = await addHubspotContact(userId, email, firstName, lastName, notes)
             } else if (toolCall.function.name === "create_calendar_event") {
                 const { title, start_datetime, duration, description } = args
                 result = await setCalendarEvent(userId, title, start_datetime, duration, description)

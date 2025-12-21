@@ -8,7 +8,7 @@ import { MAX_FETCH_DAYS, MAX_FETCH_RECORDS, ONE_DAY_MS } from '@financial-ai/typ
 
 const hubspotClient = new Client();
 
-async function getValidClient(userId: string) {
+export async function getValidHubspotClient(userId: string) {
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
 
@@ -38,7 +38,7 @@ export async function syncHubspotData(userId: string) {
     if (user.hubspotSynching) return
     if (!user?.hubspotTokens || !user.hubspotTokens.access_token || !user.hubspotTokens.refresh_token) return
     try {
-        const client = await getValidClient(userId);
+        const client = await getValidHubspotClient(userId);
 
         user.hubspotSynching = true
         await user.save()

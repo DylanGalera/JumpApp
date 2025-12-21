@@ -16,12 +16,27 @@ const socket: Socket = io(URL, {
 });
 
 export function ChatBot() {
-    const { logout } = useAuth()
+    const { logout, isHubspotConnected } = useAuth()
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    const connectHubSpot = () => {
+        const clientId = import.meta.env.VITE_REACT_APP_HUBSPOT_CLIENT_ID;
+        // 1. This must be the ONE URL whitelisted n HubSpot Dev Portal
+        const redirectUri = "http://localhost:4200/hubSpotAuth";
+
+        // 3. Put that current URL into the 'state' parameter
+        const scopes = "crm.objects.contacts.read crm.objects.deals.read crm.objects.orders.read crm.objects.contacts.write crm.schemas.contacts.write crm.objects.orders.write sales-email-read crm.schemas.contacts.read";
+        const authUrl = `https://app.hubspot.com/oauth/authorize?` +
+            `client_id=${clientId}&` +
+            `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+            `scope=${encodeURIComponent(scopes)}`
+
+        window.location.href = authUrl;
+    }
 
     const exit = () => {
         if (!confirm('Are you sure to logo out?')) return
@@ -83,6 +98,7 @@ export function ChatBot() {
                         title={isConnected ? 'Online' : 'Offline'}
                     />
                 </div>
+                {!isHubspotConnected && <button className="border-1 border-[#888888] rounded p-1 border" onClick={connectHubSpot}>Connect Hubspot</button>}
                 <button onClick={exit} className="text-gray-400 hover:text-gray-800 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
