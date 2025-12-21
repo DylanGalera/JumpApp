@@ -3,9 +3,15 @@ import { Instruction } from '../models/instruction';
 import { Task } from '../models/tasks';
 import { IChatHistory } from '@financial-ai/types';
 
-export const grogClient = new OpenAI({
+/*export const grogClient = new OpenAI({
     apiKey: process.env.GROG_API_KEY, // Groq/Mistral/OpenRouter Key
     baseURL: "https://api.groq.com/openai/v1" // Replace with provider's URL
+});*/
+
+export const geminiClient = new OpenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+    // This URL allows you to use the OpenAI SDK with Gemini
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
 });
 
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
@@ -57,8 +63,9 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
             content: h.content
         }))
 
-        const response = await grogClient.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
+        const response = await /*grogClient*/geminiClient.chat.completions.create({
+            //model: "llama-3.3-70b-versatile",
+            model: "gemini-flash-latest",
             messages,
             tools: tools,
         });
@@ -93,7 +100,7 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
             }
 
             // 4. Final API Call to summarize the action to the user
-            const finalResponse = await grogClient.chat.completions.create({
+            const finalResponse = await /*grogClient*/geminiClient.chat.completions.create({
                 model: "llama-3.3-70b-versatile",
                 messages: messages
             });

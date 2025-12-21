@@ -31,7 +31,6 @@ const connectDB = async () => {
       } catch (err) {
         console.error("Startup query failed:", err);
       }
-      //console.log("--->",await askAiAgent('6946e5c1272dd15620a4049d','Always start all response emails with Hello'))
     });
     const conn = await mongoose.connect(process.env.MONGO_URI as string);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
@@ -57,8 +56,8 @@ app.use((req: CustomRequest, res, next) => {
 });
 
 app.use(cors({
-  origin: process.env.FRONT_URL, // Your exact frontend URL
-  credentials: true,                // Required to allow the browser to receive/send cookies
+  origin: process.env.FRONT_URL, 
+  credentials: true,                
   //exposedHeaders: ['Content-Disposition'],
 }));
 
