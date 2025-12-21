@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 interface Message {
     role: 'user' | 'assistant' | 'system';
@@ -51,7 +52,6 @@ export function ChatBot() {
             setMessages([])
         });
         socket.on('message', (msg: string) => {
-            setIsConnected(false)
             setMessages(prev => [...prev, { role: 'system', content: msg }]);
         });
 
@@ -77,6 +77,9 @@ export function ChatBot() {
     }, [messages, isLoading]);
 
     const handleSend = (e: React.FormEvent) => {
+        if (!isConnected) {
+            return toast.error('You are disconnected')
+        }
         e.preventDefault();
         if (!input.trim() || isLoading) return;
 
