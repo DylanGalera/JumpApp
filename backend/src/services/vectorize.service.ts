@@ -8,10 +8,10 @@ type RecordData = {
     id: string,
     subject: string,
     from: string
-    type: 'contact' | 'note_chunk' | 'email_chunk'
+    type: 'contact' | 'note_chunk' | 'email_chunk' | 'calendar_event'
 }
 
-export async function vectorizeAndStore(userId: string, recordData: RecordData, chunks: string[], source: 'gmail' | 'hubspot', timestamp: number, recordId: string) {
+export async function vectorizeAndStore(userId: string, recordData: RecordData, chunks: string[], source: 'gmail' | 'hubspot' | 'calendar', timestamp: number, recordId: string) {
     let chunkId = 0
     for (const chunk of chunks) {
         chunkId++

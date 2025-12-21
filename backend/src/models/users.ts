@@ -13,7 +13,8 @@ const userSchema = new mongoose.Schema<TUser>({
     expiresAt: Number,
   },
   hubspotSynching: Boolean,
-  gmailSyncing: Boolean
+  gmailSyncing: Boolean,
+  calendarSyncing: Boolean
 });
 
 export const User = mongoose.model<TUser>('Users', userSchema);

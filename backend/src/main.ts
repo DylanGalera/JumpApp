@@ -24,8 +24,8 @@ const connectDB = async () => {
       console.log('Running startup database queries...');
       try {
         const result = await User.updateMany(
-          { $or: [{ hubspotSynching: true }, { gmailSyncing: true }] },
-          { $set: { hubspotSynching: false, gmailSyncing: false } }
+          { $or: [{ hubspotSynching: true }, { gmailSyncing: true }, { calendarSyncing: true }] },
+          { $set: { hubspotSynching: false, gmailSyncing: false, calendarSyncing: false } }
         );
         console.log(`Startup cleanup: Reset ${result.modifiedCount} zombie locks.`);
       } catch (err) {

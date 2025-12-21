@@ -6,7 +6,7 @@ const KnowledgeSchema = new Schema<TKnowledge>({
     userId: { type: String, required: true },
     embedding: { type: [Number], required: true },
     metadata: {
-        source: { type: String, enum: ['gmail', 'hubspot'], required: true },
+        source: { type: String, enum: ['gmail', 'hubspot', 'calendar'], required: true },
         externalId: { type: String, required: true },
         clientEmail: { type: String },
         type: { type: String },
