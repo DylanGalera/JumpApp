@@ -2,6 +2,9 @@ import OpenAI from 'openai';
 import { Instruction } from '../models/instruction';
 import { Task } from '../models/tasks';
 import { IChatHistory } from '@financial-ai/types';
+import { vectorize } from '../tools/vectorizer';
+import { KNowledge } from '../models/knowledge';
+import { sendEmail } from '../tools/sendemail';
 
 /*export const grogClient = new OpenAI({
     apiKey: process.env.GROG_API_KEY, // Groq/Mistral/OpenRouter Key
@@ -108,6 +111,20 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 required: ["contactId", "content"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "search_knowledge_base",
+            description: "Searches the database for emails, notes, or client information based on a query string.",
+            parameters: {
+                type: "object",
+                properties: {
+                    query: { type: "string", description: "The specific topic or question to search for (e.g., 'Greg's investment goals')" }
+                },
+                required: ["query"]
+            }
+        }
     }
 ];
 
@@ -151,17 +168,39 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
                     await Task.create({ userId, ...args })
                     result = `Created task: ${args.title} due on ${args.due_date || 'not specified'}`;
                 } else if (toolCall.function.name === "send_client_email") {
-                    //await Task.create({ userId, ...args })
-                    result = `Sent Client Email to ${args.title} due on ${args.due_date || 'not specified'}`;
+                    const { to, subject, body } = args
+                    await sendEmail(userId, to, subject, body)
+                    result = `Sent Client Email to ${to} with subject ${subject}`;
                 } else if (toolCall.function.name === "update_hubspot_contact") {
-                    //await Task.create({ userId, ...args })
+                    const { email, lifecycle_stage, notes } = args
                     result = `Updated Hubspot Contact : ${args.title} due on ${args.due_date || 'not specified'}`;
                 } else if (toolCall.function.name === "create_calendar_event") {
-                    //await Task.create({ userId, ...args })
+                    const { title, start_datetime, duration, description } = args
                     result = `Created Google Calendar Event: ${args.title} due on ${args.due_date || 'not specified'}`;
                 } else if (toolCall.function.name === "add_hubspot_note") {
-                    //await Task.create({ userId, ...args })
+                    const { contactId, content } = args
                     result = `Created hubspot task: ${args.title} due on ${args.due_date || 'not specified'}`;
+                } else if (toolCall.function.name === "search_knowledge_base") {
+                    const { query } = args;
+
+                    // 1. Vectorize the AI's search query
+                    const queryEmbedding = await vectorize(query);
+
+                    // 2. Perform the MongoDB Vector Search
+                    const results = await KNowledge.aggregate([
+                        {
+                            $vectorSearch: {
+                                index: "vector_index",
+                                path: "embedding",
+                                queryVector: queryEmbedding,
+                                numCandidates: 100,
+                                limit: 5
+                            }
+                        }
+                    ]);
+
+                    // 3. Return the text chunks back to the AI
+                    result = results.map(r => r.content).join("\n---\n");
                 }
                 // Add the Tool execution result back to messages
                 messages.push({

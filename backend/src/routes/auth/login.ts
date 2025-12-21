@@ -1,10 +1,10 @@
 import { PVerifyCodeParams, RVerifyCodeResult } from "@financial-ai/types";
 import { User } from "../../models/users";
 import { CookieOptions, Request, Response } from 'express';
-import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken'
 import { syncUserData } from "../../tools/syncData";
 import { Server } from "socket.io";
+import { OAuth2Client } from 'google-auth-library';
 
 export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     httpOnly: true,     // Prevents JS access (XSS protection)
@@ -13,20 +13,19 @@ export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 }
 
-const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    'postmessage'
-);
-
 export async function authLogin(req: Request, res: Response) {
     const { code } = req.body as PVerifyCodeParams
     try {
+        const googleClient = new OAuth2Client(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            'postmessage'
+        );
         // Exchange the auth code for tokens
-        const { tokens } = await client.getToken(code);
-        client.setCredentials(tokens);
+        const { tokens } = await googleClient.getToken(code);
+        googleClient.setCredentials(tokens);
         // Get user profile info
-        const ticket = await client.verifyIdToken({
+        const ticket = await googleClient.verifyIdToken({
             idToken: tokens.id_token!,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
