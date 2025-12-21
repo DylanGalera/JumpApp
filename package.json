@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "vercel-build": "npx nx build frontend",
     "app": "npx nx serve frontend",
     "start": "npx nx serve backend"
   },
@@ -69,6 +70,7 @@
     "react-router-dom": "6.29.0",
     "react-toastify": "^11.0.5",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "vercel": "^50.1.3"
   }
 }
