@@ -1,5 +1,4 @@
-import { CredentialResponse, GoogleLogin, useGoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
+import { useGoogleLogin } from '@react-oauth/google';
 import { post } from '../services';
 import { PVerifyCodeParams, ROUTES_NAMES, RVerifyCodeResult } from '@financial-ai/types'
 import { toast } from 'react-toastify';
@@ -25,8 +24,8 @@ export const Login = () => {
             }
         },
         onError: (error) => console.log('Login Failed:', error),
-        flow: 'auth-code', // CRITICAL: This ensures you get a 'code' and not a 'token'
-        scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events',
+        flow: 'auth-code',
+        scope: 'openid email profile https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.events',
     });
 
     return (

@@ -5,6 +5,7 @@ import { IChatHistory } from '@financial-ai/types';
 import { vectorize } from '../tools/vectorizer';
 import { KNowledge } from '../models/knowledge';
 import { sendEmail } from '../tools/sendemail';
+import { setCalendarEvent } from '../tools/setEvent';
 
 /*export const grogClient = new OpenAI({
     apiKey: process.env.GROG_API_KEY, // Groq/Mistral/OpenRouter Key
@@ -89,9 +90,9 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 type: "object",
                 properties: {
                     title: { type: "string", description: "The title/name of the event" },
-                    start_datetime: { type: "string", description: "Start time in yyyymmddTHHMM format" },
-                    duration: { type: "string", description: "Duration (e.g., '1h', '30m', '1d')" },
-                    description: { type: "string", description: "Optional notes for the event" }
+                    start_datetime: { type: "string", description: "Start time in ISO format" },
+                    duration: { type: "string", description: "Duration (e.g., '1h', '30m', '1d'), default value is 30 minutes." },
+                    description: { type: "string", description: "Optional notes for the event, leave it blank if there is no description." }
                 },
                 required: ["title", "start_datetime"]
             }
@@ -189,16 +190,14 @@ export async function Api(userId: string, messages: any[]): Promise<string | nul
                 result = `Updated Hubspot Contact : ${args.title} due on ${args.due_date || 'not specified'}`;
             } else if (toolCall.function.name === "create_calendar_event") {
                 const { title, start_datetime, duration, description } = args
-                result = `Created Google Calendar Event: ${args.title} due on ${args.due_date || 'not specified'}`;
+                result = await setCalendarEvent(userId, title, start_datetime, duration, description)
             } else if (toolCall.function.name === "add_hubspot_note") {
                 const { contactId, content } = args
                 result = `Created hubspot task: ${args.title} due on ${args.due_date || 'not specified'}`;
             } else if (toolCall.function.name === "search_knowledge_base") {
                 const { query } = args;
-
                 // 1. Vectorize the AI's search query
                 const queryEmbedding = await vectorize(query);
-
                 // 2. Perform the MongoDB Vector Search
                 const results = await KNowledge.aggregate([
                     {
@@ -211,7 +210,6 @@ export async function Api(userId: string, messages: any[]): Promise<string | nul
                         }
                     }
                 ]);
-
                 // 3. Return the text chunks back to the AI
                 result = results.map(r => r.content).join("\n---\n");
             }

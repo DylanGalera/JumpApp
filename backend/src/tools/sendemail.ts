@@ -3,22 +3,19 @@ import { User } from '../models/users';
 
 export async function sendEmail(userId: string, to: string, subject: string, body: string) {
     try {
-        console.log(">>>", userId, to, body, subject)
         const oauth2Client = new google.auth.OAuth2(
-            process.env.CLIENT_ID,
-            process.env.CLIENT_SECRET,
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
             'postmessage'
         );
 
         const user = await User.findById(userId)
-        console.log("--->1")
         // Set the user's tokens (Access + Refresh)
         oauth2Client.setCredentials({
             access_token: user.accessToken,
             refresh_token: user.refreshToken
         });
 
-        console.log("--->2")
         const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
         // Gmail API requires the email to be base64url encoded
@@ -33,7 +30,7 @@ export async function sendEmail(userId: string, to: string, subject: string, bod
             body,
         ];
         const message = messageParts.join('\n');
-        console.log("--->3")
+
         // Encode the message to base64url
         const encodedMessage = Buffer.from(message)
             .toString('base64')
@@ -41,18 +38,16 @@ export async function sendEmail(userId: string, to: string, subject: string, bod
             .replace(/\//g, '_')
             .replace(/=+$/, '');
 
-        console.log("--->4")
-        const res = await gmail.users.messages.send({
+        await gmail.users.messages.send({
             userId: 'me',
             requestBody: {
                 raw: encodedMessage,
             },
         });
 
-        console.log("--->5")
         return `Email Sent to ${to} with subject ${subject}`;
-    } catch {
-        console.log("-->Error")
+    } catch (e) {
+        console.log("-->Error", e)
         return 'Error in sending email to ' + to
     }
 }
