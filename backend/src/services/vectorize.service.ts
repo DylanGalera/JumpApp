@@ -1,10 +1,8 @@
-import { InferenceClient } from '@huggingface/inference';
 import { KNowledge } from '../models/knowledge';
 import { Instruction } from '../models/instruction';
 import { Task } from '../models/tasks';
 import { askAiAgent } from './ai.ask';
-
-export const hfClient = new InferenceClient(process.env.HF_TOKEN);
+import { vectorize } from '../tools/vectorizer';
 
 type RecordData = {
     id: string,
@@ -18,16 +16,10 @@ export async function vectorizeAndStore(userId: string, recordData: RecordData, 
     for (const chunk of chunks) {
         chunkId++
         try {
-            const embedding = await hfClient.featureExtraction({
-                model: "sentence-transformers/all-MiniLM-L6-v2",
-                inputs: chunk,
-                provider: "hf-inference"
-            }) as number[];
-
             await KNowledge.create({
                 content: chunk,
                 userId: userId,
-                embedding: embedding,
+                embedding: await vectorize(chunk),
                 metadata: {
                     source,
                     externalId: recordData.id,

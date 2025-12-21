@@ -1,7 +1,7 @@
 import { IChatHistory } from "@financial-ai/types";
 import { KNowledge } from "../models/knowledge";
 import { callAiAPI } from "./callAIApi";
-import { hfClient } from "./vectorize.service";
+import { vectorize } from "../tools/vectorizer";
 
 
 export async function askAiAgent(userId: string, history: IChatHistory[]): Promise<string> {
@@ -9,11 +9,7 @@ export async function askAiAgent(userId: string, history: IChatHistory[]): Promi
         const users = history.filter(a => a.role == 'user')
         if (!users.length) return ''
         const question = users[users.length - 1].content
-        const questionEmbedding = await hfClient.featureExtraction({
-            model: "sentence-transformers/all-MiniLM-L6-v2",
-            inputs: question,
-            provider: "hf-inference"
-        }) as number[];
+        const questionEmbedding = await vectorize(question);
 
         if (!Array.isArray(questionEmbedding)) {
             throw new Error("Embedding not in the expected format");

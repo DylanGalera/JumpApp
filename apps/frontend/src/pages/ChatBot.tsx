@@ -3,7 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 
 interface Message {
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
 }
 
@@ -35,6 +35,11 @@ export function ChatBot() {
             setIsConnected(false)
             setMessages([])
         });
+        socket.on('message', (msg: string) => {
+            setIsConnected(false)
+            setMessages(prev => [...prev, { role: 'system', content: msg }]);
+        });
+
         socket.on('receive', (msg: string) => {
             setIsLoading(false);
             setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
@@ -96,7 +101,7 @@ export function ChatBot() {
                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[90%] sm:max-w-[80%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed ${msg.role === 'user'
                                 ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
-                                : 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200'
+                                : msg.role == 'assistant' ? 'bg-gray-100 text-gray-800 rounded-bl-none border border-gray-200' : 'bg-white text-gray-500 rounded-bl-none border border-gray-500'
                                 }`}>
                                 {msg.content}
                             </div>

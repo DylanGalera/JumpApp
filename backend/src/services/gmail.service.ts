@@ -26,11 +26,16 @@ const getPlainText = (payload: any): string => {
     return '';
 };
 
-export async function syncUserGmail(userId: string, tokens: Credentials) {
+export async function syncUserGmail(userId: string) {
     const user = await User.findById(userId)
     if (!user) return
     if (user.gmailSyncing) return
 
+    const tokens: Credentials = {
+        refresh_token: user.refreshToken,
+        access_token: user.accessToken
+    }
+    
     try {
         user.gmailSyncing = true
         await user.save()

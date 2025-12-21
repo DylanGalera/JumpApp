@@ -2,8 +2,8 @@ import { RVerifyCodeResult } from "@financial-ai/types";
 import { User } from "../../models/users";
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken'
-import { syncUserGmail } from "../../services/gmail.service";
-import { syncHubspotData } from "../../services/hubspot.sync";
+import { syncUserData } from "../../tools/syncData";
+import { Server } from "socket.io";
 
 export const authCheck = async (req: Request, res: Response) => {
     try {
@@ -21,14 +21,8 @@ export const authCheck = async (req: Request, res: Response) => {
             return res.status(401).json({ authenticated: false, message: 'User no longer exists' });
         }
 
-        syncUserGmail(user._id.toString(), {
-            access_token: user.accessToken,
-            refresh_token: user.refreshToken
-        }).catch(err =>
-            console.error("Polling sync failed:", err)
-        );
-
-        syncHubspotData(user._id.toString())
+        const io = req.app.get("socketio") as Server;
+        syncUserData(user._id.toString(), io)
 
         delete user.refreshToken
         delete user.accessToken

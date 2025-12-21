@@ -44,6 +44,70 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 required: ["title"]
             }
         }
+    },
+    {
+        type: "function",
+        function: {
+            name: "send_client_email",
+            description: "Sends a professional email to a client via Gmail.",
+            parameters: {
+                type: "object",
+                properties: {
+                    to: { type: "string", description: "Recipient email address" },
+                    subject: { type: "string" },
+                    body: { type: "string", description: "The full content of the email." }
+                },
+                required: ["to", "subject", "body"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "update_hubspot_contact",
+            description: "Updates or creates a contact record in HubSpot.",
+            parameters: {
+                type: "object",
+                properties: {
+                    email: { type: "string" },
+                    lifecycle_stage: { type: "string", enum: ["lead", "marketingqualifiedlead", "customer"] },
+                    notes: { type: "string" }
+                },
+                required: ["email"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "create_calendar_event",
+            description: "Schedules a new event or meeting in the user's Google Calendar.",
+            parameters: {
+                type: "object",
+                properties: {
+                    title: { type: "string", description: "The title/name of the event" },
+                    start_datetime: { type: "string", description: "Start time in yyyymmddTHHMM format" },
+                    duration: { type: "string", description: "Duration (e.g., '1h', '30m', '1d')" },
+                    description: { type: "string", description: "Optional notes for the event" }
+                },
+                required: ["title", "start_datetime"]
+            }
+        }
+    },
+    {
+        type: "function",
+        function: {
+            name: "add_hubspot_note",
+            description: "Adds a note to a specific contact's timeline in HubSpot.",
+            parameters: {
+                type: "object",
+                properties: {
+                    contactId: { type: "string", description: "The numerical ID of the HubSpot contact" },
+                    content: { type: "string", description: "The text content of the note" }
+                },
+                required: ["contactId", "content"]
+            }
+        }
     }
 ];
 
@@ -63,8 +127,7 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
             content: h.content
         }))
 
-        const response = await /*grogClient*/geminiClient.chat.completions.create({
-            //model: "llama-3.3-70b-versatile",
+        const response = await geminiClient.chat.completions.create({
             model: "gemini-flash-latest",
             messages,
             tools: tools,
@@ -84,13 +147,22 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
                 if (toolCall.function.name === "add_instruction") {
                     await Instruction.create({ userId, ...args })
                     result = `Successfully added instruction: ${args.content}`;
-                }
-
-                if (toolCall.function.name === "create_task") {
+                } else if (toolCall.function.name === "create_task") {
                     await Task.create({ userId, ...args })
                     result = `Created task: ${args.title} due on ${args.due_date || 'not specified'}`;
+                } else if (toolCall.function.name === "send_client_email") {
+                    //await Task.create({ userId, ...args })
+                    result = `Sent Client Email to ${args.title} due on ${args.due_date || 'not specified'}`;
+                } else if (toolCall.function.name === "update_hubspot_contact") {
+                    //await Task.create({ userId, ...args })
+                    result = `Updated Hubspot Contact : ${args.title} due on ${args.due_date || 'not specified'}`;
+                } else if (toolCall.function.name === "create_calendar_event") {
+                    //await Task.create({ userId, ...args })
+                    result = `Created Google Calendar Event: ${args.title} due on ${args.due_date || 'not specified'}`;
+                } else if (toolCall.function.name === "add_hubspot_note") {
+                    //await Task.create({ userId, ...args })
+                    result = `Created hubspot task: ${args.title} due on ${args.due_date || 'not specified'}`;
                 }
-
                 // Add the Tool execution result back to messages
                 messages.push({
                     role: "tool",

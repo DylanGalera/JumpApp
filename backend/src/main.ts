@@ -47,7 +47,7 @@ const server = http.createServer(app); // The shared server
 const io = new Server(server, {
   cors: { origin: "*" }
 });
-
+app.set("socketio", io);
 app.use(cookieParser());
 
 app.use((req: CustomRequest, res, next) => {
@@ -56,8 +56,8 @@ app.use((req: CustomRequest, res, next) => {
 });
 
 app.use(cors({
-  origin: process.env.FRONT_URL, 
-  credentials: true,                
+  origin: process.env.FRONT_URL,
+  credentials: true,
   //exposedHeaders: ['Content-Disposition'],
 }));
 
@@ -73,7 +73,7 @@ server.listen(3000, () => {
 
 app.use(ROUTES_NAMES.AUTH.name, auth)
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
 
   const cookies = cookie.parse(socket.handshake.headers.cookie || '');
   const token = cookies.session_token
@@ -85,7 +85,16 @@ io.on('connection', (socket) => {
 
   const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
   const userId = decoded.userId
+  socket.join(userId);
   console.log('User connected via socket', userId);
+
+  setTimeout(async () => {
+    const user = await User.findById(userId)
+
+    if (user.hubspotSynching || user.gmailSyncing) {
+      socket.emit('message', 'Financial AI App is fetching your data, please wait until finishing this process and then you can ask any question related to your google email/hubspot')
+    }
+  }, 1000);
 
   socket.on('disconnect', (reason) => {
     while (history.length) history.splice(0)

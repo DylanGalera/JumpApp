@@ -1,10 +1,10 @@
 import { PVerifyCodeParams, RVerifyCodeResult } from "@financial-ai/types";
 import { User } from "../../models/users";
-import { CookieOptions, Request, Response, urlencoded } from 'express';
+import { CookieOptions, Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken'
-import { syncUserGmail } from "../../services/gmail.service";
-import { syncHubspotData } from "../../services/hubspot.sync";
+import { syncUserData } from "../../tools/syncData";
+import { Server } from "socket.io";
 
 export const LOGIN_COOCKIE_PARAMS: CookieOptions = {
     httpOnly: true,     // Prevents JS access (XSS protection)
@@ -44,11 +44,8 @@ export async function authLogin(req: Request, res: Response) {
             { upsert: true, new: true }
         );
 
-        syncUserGmail(user._id.toString(), tokens).catch(err =>
-            console.error("Initial sync failed:", err)
-        );
-
-        syncHubspotData(user._id.toString())
+        const io = req.app.get("socketio") as Server;
+        syncUserData(user._id.toString(), io)
 
         const sessionToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
         res.cookie('session_token', sessionToken, LOGIN_COOCKIE_PARAMS);
