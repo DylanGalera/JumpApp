@@ -7,7 +7,8 @@ export type TKnowledge = {
         externalId: string;
         clientEmail?: string;
         type?: string; // e.g., 'email-body', 'contact-note'
-        subject?: string
+        subject?: string,
+        date: Date
     };
     createdAt: Date;
     timestamp: number,

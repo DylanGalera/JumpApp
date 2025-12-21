@@ -32,8 +32,9 @@ export async function vectorizeAndStore(userId: string, recordData: RecordData, 
                     source,
                     externalId: recordData.id,
                     subject: recordData.subject,
-                    clientEmail: recordData.from, // Extract this from headers
-                    type: recordData.type
+                    clientEmail: recordData.from,
+                    type: recordData.type,
+                    date: new Date(timestamp)
                 },
                 timestamp,
                 uniqueId: `${source}_${recordData.type}_${recordId}_${chunkId}`
@@ -45,7 +46,6 @@ export async function vectorizeAndStore(userId: string, recordData: RecordData, 
                 console.error("Proactive processing failed:", error);
             }
         } catch {
-
         }
     }
 }

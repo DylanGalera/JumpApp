@@ -10,7 +10,8 @@ const KnowledgeSchema = new Schema<TKnowledge>({
         externalId: { type: String, required: true },
         clientEmail: { type: String },
         type: { type: String },
-        subject: { type: String }
+        subject: { type: String },
+        date: { type: Date }
     },
     createdAt: { type: Date, default: Date.now },
     timestamp: { type: Number, required: true },

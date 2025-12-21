@@ -47,7 +47,8 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
             {
                 role: "system",
                 content: `You are a proactive Financial Advisor AI. 
-          Context from HubSpot/Gmail: ${contextText || "No context found."}`
+                You will receive information chunks prefixed with a structured tag: [METADATA: {json_string}]
+          Context: ${contextText || "No context found."}`
             },
         ];
 
@@ -102,7 +103,8 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
 
         return responseMessage.content;
     } catch (error) {
-        console.error('Error while asking Gemini:', error);
-        throw new Error('Error in Gemini API');
+        return error.message
+        /*console.error('Error while asking Gemini:', error);
+        throw new Error('Error in Gemini API');*/
     }
 }

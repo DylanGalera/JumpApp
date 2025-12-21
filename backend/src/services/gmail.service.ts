@@ -80,7 +80,6 @@ export async function syncUserGmail(userId: string, tokens: Credentials) {
 
             if (!rawBody) continue;
 
-
             const internalDateMs = parseInt(details.data.internalDate);
 
             const chunks = await chunker(rawBody)

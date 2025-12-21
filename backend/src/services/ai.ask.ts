@@ -32,7 +32,7 @@ export async function askAiAgent(userId: string, history: IChatHistory[]): Promi
             }
         ]);
 
-        const contextText = contextDocs.map(doc => doc.content).join("\n\n");
+        const contextText = contextDocs.map(doc => `[METADATA:${JSON.stringify(doc.metadata)}]\nCONTENT:${doc.content}`).join("\n\n");
         const response = await callAiAPI(contextText, userId, history)
         return response
     } catch (e) {
