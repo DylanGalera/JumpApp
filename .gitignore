@@ -34,6 +34,7 @@ yarn-error.log
 testem.log
 /typings
 /backend/.env
+/apps/frontend/.env
 
 # System Files
 .DS_Store
@@ -45,3 +46,5 @@ Thumbs.db
 vite.config.*.timestamp*
 .vercel
 .env*.local
+.env
+**/**/.env
