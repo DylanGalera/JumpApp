@@ -144,85 +144,84 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
             content: h.content
         }))
 
+        return await Api(userId, messages)
+
+    } catch (error) {
+        if (error.message == '429 status code (no body)') return 'Probably you reached to daily limit of AI Api, please try later.'
+        return error.message
+    }
+}
+
+export async function Api(userId: string, messages: any[]): Promise<string | null> {
+    while (true) {
         const response = await geminiClient.chat.completions.create({
             model: "gemini-flash-latest",
-            messages,
+            messages: messages,
             tools: tools,
         });
 
         const responseMessage = response.choices[0].message;
 
-        // 3. Handle Tool Calls
-        if (responseMessage.tool_calls) {
-            // Add the AI's tool call request to the history
-            messages.push(responseMessage);
-
-            for (const toolCall of responseMessage.tool_calls) {
-                if (toolCall.type != 'function') continue
-                const args = JSON.parse(toolCall.function.arguments);
-                let result = "";
-                if (toolCall.function.name === "add_instruction") {
-                    await Instruction.create({ userId, ...args })
-                    result = `Successfully added instruction: ${args.content}`;
-                } else if (toolCall.function.name === "create_task") {
-                    await Task.create({ userId, ...args })
-                    result = `Created task: ${args.title} due on ${args.due_date || 'not specified'}`;
-                } else if (toolCall.function.name === "send_client_email") {
-                    const { to, subject, body } = args
-                    await sendEmail(userId, to, subject, body)
-                    result = `Sent Client Email to ${to} with subject ${subject}`;
-                } else if (toolCall.function.name === "update_hubspot_contact") {
-                    const { email, lifecycle_stage, notes } = args
-                    result = `Updated Hubspot Contact : ${args.title} due on ${args.due_date || 'not specified'}`;
-                } else if (toolCall.function.name === "create_calendar_event") {
-                    const { title, start_datetime, duration, description } = args
-                    result = `Created Google Calendar Event: ${args.title} due on ${args.due_date || 'not specified'}`;
-                } else if (toolCall.function.name === "add_hubspot_note") {
-                    const { contactId, content } = args
-                    result = `Created hubspot task: ${args.title} due on ${args.due_date || 'not specified'}`;
-                } else if (toolCall.function.name === "search_knowledge_base") {
-                    const { query } = args;
-
-                    // 1. Vectorize the AI's search query
-                    const queryEmbedding = await vectorize(query);
-
-                    // 2. Perform the MongoDB Vector Search
-                    const results = await KNowledge.aggregate([
-                        {
-                            $vectorSearch: {
-                                index: "vector_index",
-                                path: "embedding",
-                                queryVector: queryEmbedding,
-                                numCandidates: 100,
-                                limit: 5
-                            }
-                        }
-                    ]);
-
-                    // 3. Return the text chunks back to the AI
-                    result = results.map(r => r.content).join("\n---\n");
-                }
-                // Add the Tool execution result back to messages
-                messages.push({
-                    role: "tool",
-                    tool_call_id: toolCall.id,
-                    content: result
-                });
-            }
-
-            // 4. Final API Call to summarize the action to the user
-            const finalResponse = await /*grogClient*/geminiClient.chat.completions.create({
-                model: "llama-3.3-70b-versatile",
-                messages: messages
-            });
-
-            return finalResponse.choices[0].message.content;
+        // If the model did not call a tool, return its text content
+        if (!responseMessage.tool_calls) {
+            return responseMessage.content;
         }
 
-        return responseMessage.content;
-    } catch (error) {
-        return error.message
-        /*console.error('Error while asking Gemini:', error);
-        throw new Error('Error in Gemini API');*/
+        // Add the Assistant's tool call to the conversation history
+        messages.push(responseMessage);
+
+        // Process all tool calls (potentially in parallel)
+        for (const toolCall of responseMessage.tool_calls) {
+            if (toolCall.type != 'function') continue
+            const args = JSON.parse(toolCall.function.arguments);
+            let result = "";
+            if (toolCall.function.name === "add_instruction") {
+                await Instruction.create({ userId, ...args })
+                result = `Successfully added instruction: ${args.content}`;
+            } else if (toolCall.function.name === "create_task") {
+                await Task.create({ userId, ...args })
+                result = `Created task: ${args.title} due on ${args.due_date || 'not specified'}`;
+            } else if (toolCall.function.name === "send_client_email") {
+                const { to, subject, body } = args
+                result = await sendEmail(userId, to, subject, body)
+            } else if (toolCall.function.name === "update_hubspot_contact") {
+                const { email, lifecycle_stage, notes } = args
+                result = `Updated Hubspot Contact : ${args.title} due on ${args.due_date || 'not specified'}`;
+            } else if (toolCall.function.name === "create_calendar_event") {
+                const { title, start_datetime, duration, description } = args
+                result = `Created Google Calendar Event: ${args.title} due on ${args.due_date || 'not specified'}`;
+            } else if (toolCall.function.name === "add_hubspot_note") {
+                const { contactId, content } = args
+                result = `Created hubspot task: ${args.title} due on ${args.due_date || 'not specified'}`;
+            } else if (toolCall.function.name === "search_knowledge_base") {
+                const { query } = args;
+
+                // 1. Vectorize the AI's search query
+                const queryEmbedding = await vectorize(query);
+
+                // 2. Perform the MongoDB Vector Search
+                const results = await KNowledge.aggregate([
+                    {
+                        $vectorSearch: {
+                            index: "vector_index",
+                            path: "embedding",
+                            queryVector: queryEmbedding,
+                            numCandidates: 100,
+                            limit: 5
+                        }
+                    }
+                ]);
+
+                // 3. Return the text chunks back to the AI
+                result = results.map(r => r.content).join("\n---\n");
+            }
+            // Add the Tool execution result back to messages
+            messages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: result
+            });
+        }
+        // The loop continues, sending the results back to the AI for the next step
     }
 }
