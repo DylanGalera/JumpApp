@@ -101,7 +101,7 @@ io.on('connection', async (socket) => {
     const user = await User.findById(userId)
 
     if (user.hubspotSynching || user.gmailSyncing) {
-      socket.emit('message', 'Financial AI App is fetching your data, please wait until finishing this process and then you can ask any question related to your google email/hubspot')
+      socket.emit('message', 'Financial Advisor AI App is fetching your data, please wait until finishing this process and then you can ask any question related to your google email/hubspot')
     }
   }, 1000);
 
@@ -123,5 +123,9 @@ io.on('connection', async (socket) => {
     })
     if (history.length > 5) history.shift()
     socket.emit('receive', response)
+  })
+
+  socket.on('newThread', async () => {
+    while (history.length) history.splice(0)
   })
 });

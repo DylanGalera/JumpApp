@@ -152,7 +152,7 @@ export async function callAiAPI(contextText: string, userId: string, history?: I
         return await Api(userId, messages)
 
     } catch (error) {
-        if (error.message == '429 status code (no body)') return 'Probably you reached to daily limit of AI Api, please try later.'
+        if (error.message == '429 status code (no body)') return 'You have reached the daily quota for the free Gemini API key. Please wait 24 hours for the quota to reset, or contact the developer to configure a new API key.'
         return error.message
     }
 }
